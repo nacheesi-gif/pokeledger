@@ -28,8 +28,8 @@
    if(x.group==="tg")return isTG(s);
    if(x.group==="gg")return isGG(s);
    if(x.group==="promo")return isPromo(s);
-   if(x.group==="arts")return /scarlet|violet|mega|sword|shield/i.test(era(s))&&!isTG(s)&&!isPromo(s)&&!isGG(s);
-   if(x.group==="sv")return /scarlet|violet|mega evolution/i.test(era(s));
+   if(x.group==="arts")return (/scarlet|violet|mega|sword|shield/i.test(era(s))||date(s)>="2023-01-01")&&!isTG(s)&&!isPromo(s)&&!isGG(s);
+   if(x.group==="sv")return /scarlet|violet|mega evolution/i.test(era(s))||(date(s)>="2023-01-01"&&!isPromo(s)&&!isTG(s)&&!isGG(s));
    if(x.group==="swsh")return /sword|shield/i.test(era(s));
    if(x.group==="vintage")return /^(199\d|200\d)/.test(date(s))||/base|jungle|fossil|neo|gym|e-card/i.test(era(s));
    return true;
