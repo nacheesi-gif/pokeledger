@@ -66,7 +66,9 @@ function buildReceipt(fields, allocations) {
   const total = cents(fields.amount);
   if (!String(fields.title || "").trim()) throw Error("Enter what you bought.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fields.date || "")) throw Error("Choose the purchase date.");
-  if (fields.type === "Giveaway" && total !== 0) throw Error("Giveaways have a $0 acquisition cost.");
+  const purchaseType = String(fields.type || "").trim();
+  if (purchaseType.length > 60) throw Error("Keep the purchase type to 60 characters or fewer.");
+  if (purchaseType.toLowerCase() === "giveaway" && total !== 0) throw Error("Giveaways have a $0 acquisition cost.");
   const parts = allocations.map(part => {
     if (!db.members.includes(part.owner)) throw Error("Choose an existing profile.");
     if (![PERSONAL, RESALE].includes(part.purpose)) throw Error("Choose a spending purpose.");
@@ -80,7 +82,7 @@ function buildReceipt(fields, allocations) {
     owner:parts.length === 1 ? parts[0].owner : "Shared",
     purpose:parts.every(part => part.purpose === RESALE) ? RESALE : parts.every(part => part.purpose === PERSONAL) ? PERSONAL : "Mixed",
     allocations:parts, merchant:String(fields.merchant || "").trim(),
-    type:fields.type || "Singles", notes:String(fields.notes || "").trim(),
+    type:purchaseType, notes:String(fields.notes || "").trim(),
     receipt:String(fields.receipt || "").trim()
   };
 }
@@ -184,7 +186,7 @@ function transactionRow(transaction, showProfile = "all") {
   const parts = transaction.kind === "purchase" ? expenseParts(transaction) : [];
   const who = parts.length > 1 ? "Split receipt" : parts[0]?.purpose === RESALE ? "Resale" : transaction.owner || "Me";
   const icon = transaction.kind === "sale" ? "flareon" : transaction.kind === "cashout" ? "umbreon" : who === db.members[0] ? "charizard" : who === "Maz" ? "jolteon" : who === "Lalie" ? "vaporeon" : "eevee";
-  const caption = [transaction.merchant || who, transaction.date].filter(Boolean).join(" · ");
+  const caption = [transaction.merchant || who, transaction.type, transaction.date].filter(Boolean).join(" · ");
   return '<button type="button" class="ledger-transaction" onclick="' + call("details", transaction.id) + '">' + sprite(icon) +
     '<span class="transaction-copy"><b>' + E(transaction.title) + '</b><small>' + E(caption) + '</small></span>' +
     '<strong class="' + (transaction.kind === "sale" ? "positive" : "") + '">' + money(amount) + '</strong></button>';
@@ -273,7 +275,7 @@ function openReceipt(id = "", target = "") {
       return '<label class="split-line">' + E(part.label) + '<span>$ <input type="number" inputmode="decimal" min="0" step="0.01" class="field" data-split-owner="' + E(part.owner) + '" data-split-purpose="' + part.purpose + '" value="' + E(amount || "") + '" placeholder="0.00" oninput="LedgerUI.recalculate()"></span></label>';
     }).join("") + '<p id="ledger-split-status" role="status"></p></div>' +
     '<div class="formGrid"><label>Shop / platform<input class="field" name="merchant" placeholder="Whatnot, card shop…" value="' + E(transaction?.merchant||"") + '"></label>' +
-    '<label>Purchase type<select class="field" name="type">' + opts(types,transaction?.type||"Singles") + '</select></label>' +
+    '<label>Purchase type <small>Optional · your own label</small><input class="field" name="type" maxlength="60" placeholder="PSA 10 slab, Raw, Boosters…" value="' + E(transaction?.type||"") + '"></label>' +
     '<label class="span2">Notes <small>Optional</small><textarea class="field" name="notes" rows="2">' + E(transaction?.notes||"") + '</textarea></label></div>' +
     '<details class="receipt-extra"><summary>Receipt / order link</summary><input class="field" name="receipt" type="url" placeholder="https://…" value="' + E(transaction?.receipt||"") + '"></details>' +
     '<div class="modalFoot"><button class="btn" type="button" onclick="closeModal()">Cancel</button><button class="btn primary" type="submit">Save purchase</button></div></form>');
