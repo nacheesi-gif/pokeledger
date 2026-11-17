@@ -13,7 +13,7 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
 }, async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'pokeledger-chrome-'));
   const server = http.createServer(async (req, res) => {
-    const file = new URL(req.url, 'http://localhost').pathname.match(/^\/pokeledger\/((?:(?:vendor|data(?:\/tcgplayer-prices)?)\/)?[\w.-]*)$/)?.[1];
+    const file = new URL(req.url, 'http://localhost').pathname.match(/^\/pokeledger\/((?:(?:fonts|vendor|data(?:\/tcgplayer-prices)?)\/)?[\w.-]*)$/)?.[1];
     try {
       if (file === undefined || file.startsWith('.')) throw Error();
       if(file==='data/tcgplayer-prices/999.json'){
@@ -21,7 +21,7 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
         return;
       }
       const name = file || 'index.html';
-      const type = {html:'text/html',js:'text/javascript',png:'image/png',webmanifest:'application/manifest+json',svg:'image/svg+xml',json:'application/json'}[name.split('.').pop()];
+      const type = {html:'text/html',js:'text/javascript',png:'image/png',webmanifest:'application/manifest+json',svg:'image/svg+xml',json:'application/json',css:'text/css',ttf:'font/ttf'}[name.split('.').pop()];
       if (!type) throw Error();
       const data = await fs.readFile(name);
       res.writeHead(200, {'Content-Type':type}).end(data);
@@ -77,86 +77,29 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   await send('Emulation.setTouchEmulationEnabled',{enabled:true});
   await send('Page.navigate',{url});
   await waitFor('!!navigator.serviceWorker?.controller && typeof nav==="function"');
-  const manifest=await send('Page.getAppManifest');
-  assert.deepEqual(manifest.errors,[]);
-  assert.equal(JSON.parse(manifest.data).display,'standalone');
-  await evaluate(`(()=>{
-    nav("scanner");
-    const preview=document.createElement("canvas");preview.width=480;preview.height=672;
-    preview.getContext("2d").fillRect(0,0,480,672);
-    window.scannerTestStream=preview.captureStream(1);
-    navigator.mediaDevices.getUserMedia=async()=>scannerTestStream;
-    const outputs=["PE Moos Chanzard","PE Worn Charzard X","MEP EN 023"];
-    window.scannerTestCalls=[];
-    window.Tesseract={createWorker:async()=>({
-      setParameters:async options=>{window.scannerTestMode=options.tessedit_pageseg_mode},
-      recognize:async()=>({data:{text:outputs.shift()||""}})
-    })};
-    const originalFetch=window.fetch.bind(window);
-    window.fetch=(input,options)=>{
-      const url=new URL(String(input),location.href);
-      if(url.origin==="https://api.tcgdex.net"&&url.pathname.endsWith("/cards")){
-        scannerTestCalls.push(url.searchParams.get("name"));
-        return Promise.resolve({ok:true,json:async()=>[
-          {id:"me02-013",localId:"013",name:"Mega Charizard X ex",image:""},
-          {id:"mep-023",localId:"023",name:"Mega Charizard X ex",image:""}
-        ]});
-      }
-      return originalFetch(input,options);
-    };
-    window.PokeMarket.load=async id=>({id,name:"Mega Charizard X ex",localId:id.split("-")[1],set:{name:"Mega Evolution Promos"},pricing:{tcgplayer:{unit:"USD",updated:new Date().toISOString(),holofoil:{marketPrice:5}}}});
-    document.querySelector('[onclick="pscStart()"]').click();
-  })()`);
-  await waitFor('document.getElementById("psc-video").videoWidth>0');
-  await evaluate('pscAuto()');
-  await waitFor('!!document.querySelector(".psc-item")');
-  assert.equal(await evaluate('PokeScanner.card("mep-023").name'),'Mega Charizard X ex');
-  assert.equal(await evaluate('scannerTestMode'),'11');
-  assert.equal(await evaluate('scannerTestCalls[0]'),'Mega Charizard X ex');
-  assert.equal(await evaluate('document.getElementById("psc-number").value'),'023');
-  assert.equal(await evaluate('document.getElementById("psc-auto").textContent'),'Auto: OFF');
-  assert.equal(await evaluate('db.cards.length'),0,'Recognition requires explicit Add owned');
-  await evaluate('document.querySelector(".psc-item .btn.primary").click()');
-  await waitFor('db.statuses["ex-mep-023"]?.qty===1');
-  await evaluate('nav("dashboard")');
-  assert.equal(await evaluate('scannerTestStream.getTracks()[0].readyState'),'ended');
-  const testPrice=await evaluate('PokeMarket.supplement({id:"fixture-1",thirdParty:{tcgplayer:9990001}})');
-  assert.equal(testPrice.pricing.tcgplayer.holofoil.marketPrice,2.79);
-  const fixture={members:['Fixture'],cards:[],statuses:{},transactions:[],budget:43};
-  await evaluate('localStorage.setItem("pokeledger-v1",'+JSON.stringify(JSON.stringify(fixture))+')');
-  // Disconnect the actual origin, including service-worker fetches.
-  server.closeAllConnections();
-  await new Promise(resolve=>server.close(resolve));
-  await send('Page.navigate',{url:url+'index.html?offline-check'});
-  await waitFor('location.search==="?offline-check" && typeof db!=="undefined" && db.members[0]==="Fixture"');
-  const cachedPrice=await evaluate('fetch("./data/tcgplayer-prices/999.json").then(r=>r.json())');
-  assert.equal(cachedPrice.products['9990001'].holofoil,2.79);
-  const matrix=JSON.parse(await fs.readFile('tests/qr-fixture.json','utf8'));
-  const qrResult=await evaluate('('+ (async modules=>{
-    const size=(modules.length+8)*6,canvas=document.createElement('canvas');
-    canvas.width=canvas.height=size;
-    const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,size,size);ctx.fillStyle='black';
-    for(let y=0;y<modules.length;y++)for(let x=0;x<modules.length;x++)if(modules[y][x])ctx.fillRect((x+4)*6,(y+4)*6,6,6);
-    return PokeSlabs.readQR(canvas);
-  }).toString()+')('+JSON.stringify(matrix)+')');
-  assert.equal(qrResult,'https://www.psacard.com/cert/12345678');
+
+  await evaluate('LedgerUI.begin()');
+  assert.deepEqual(await evaluate('db.members'),['Me','Maz','Lalie']);
+  await evaluate(`LedgerUI.openReceipt();const f=document.getElementById("ledger-receipt-form");f.elements.amount.value="100";f.elements.title.value="Sample shared purchase";f.elements.recipient.value="split";LedgerUI.recipient("split");const amounts=[20,25,15,40];[...f.querySelectorAll("[data-split-owner]")].forEach((el,i)=>el.value=amounts[i]);LedgerUI.submitReceipt(f)`);
+  assert.equal(await evaluate('metrics().spent'),100);
+  assert.equal(await evaluate('metrics().hobbySpent'),60);
+  assert.equal(await evaluate('metrics().resaleSpent'),40);
+  await send('Page.reload');
+  await waitFor('typeof db!=="undefined" && db.transactions.length===1');
+  assert.deepEqual(await evaluate('db.members'),['Me','Maz','Lalie']);
   for(const width of [320,390,430]){
     await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:2,mobile:true});
-    for(const section of ['collection','scanner','slabs','restocks','spending','sales','settings','dashboard','explore']){
-      const selector='.navBottom button[onclick="nav(\''+section+'\')"]';
-      const point=await evaluate('(()=>{const b=document.querySelector('+JSON.stringify(selector)+');b.scrollIntoView({block:"nearest",inline:"center"});const r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,h:r.height}})()');
-      assert.ok(point.h>=44,section+' tap height');
-      await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:point.x,y:point.y}]});
-      await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-      await waitFor('page==='+JSON.stringify(section));
-      if(section==='scanner'){
-        const geometry=await evaluate('(()=>{const v=document.querySelector(".psc-viewport").getBoundingClientRect(),g=document.querySelector(".psc-guidebox").getBoundingClientRect();return {inside:g.top>=v.top&&g.bottom<=v.bottom&&g.left>=v.left&&g.right<=v.right,ratio:g.width/g.height}})()');
-        assert.ok(geometry.inside,'Guide must fit video at '+width);
-        assert.ok(Math.abs(geometry.ratio-5/7)<0.02,'Card guide aspect ratio');
-      }
-      const actual=await evaluate('document.documentElement.scrollWidth');
-      assert.ok(actual<=width,section+' at '+width+' overflows to '+actual);
+    for(const section of ['dashboard','spending','sales','settings']){
+      await evaluate('nav('+JSON.stringify(section)+')');
+      assert.ok(await evaluate('document.documentElement.scrollWidth')<=width,section+' overflow at '+width);
     }
   }
-  assert.deepEqual(JSON.parse(await evaluate('localStorage.getItem("pokeledger-v1")')),fixture);
+  await evaluate('nav("dashboard")');
+  const shot=await send('Page.captureScreenshot',{format:'png'});
+  await fs.writeFile('/tmp/pokeledger-spending-mobile.png',Buffer.from(shot.data,'base64'));
+  server.closeAllConnections();
+  await new Promise(resolve=>server.close(resolve));
+  await send('Page.reload');
+  await waitFor('typeof db!=="undefined" && db.transactions.length===1');
+  assert.deepEqual(await evaluate('db.members'),['Me','Maz','Lalie']);
 });

@@ -1,0 +1,1 @@
+Archivo Black, SIL Open Font License 1.1. Source Google Fonts ofl/archivoblack and https://fonts.gstatic.com/s/archivoblack/v23/HTxqL289NzCGg4MzN6KJ7eW6OYs.ttf. Latin web font, unchanged. Used for display headings. No new JavaScript dependency.
