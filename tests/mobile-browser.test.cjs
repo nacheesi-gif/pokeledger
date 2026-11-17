@@ -13,11 +13,11 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
 }, async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'pokeledger-chrome-'));
   const server = http.createServer(async (req, res) => {
-    const file = new URL(req.url, 'http://localhost').pathname.match(/^\/pokeledger\/([\w.-]*)$/)?.[1];
+    const file = new URL(req.url, 'http://localhost').pathname.match(/^\/pokeledger\/((?:(?:vendor|data\/tcgplayer-prices)\/)?[\w.-]*)$/)?.[1];
     try {
       if (file === undefined || file.startsWith('.')) throw Error();
       const name = file || 'index.html';
-      const type = {html:'text/html',js:'text/javascript',png:'image/png',webmanifest:'application/manifest+json',svg:'image/svg+xml'}[name.split('.').pop()];
+      const type = {html:'text/html',js:'text/javascript',png:'image/png',webmanifest:'application/manifest+json',svg:'image/svg+xml',json:'application/json'}[name.split('.').pop()];
       if (!type) throw Error();
       const data = await fs.readFile(name);
       res.writeHead(200, {'Content-Type':type}).end(data);
@@ -92,6 +92,11 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
       await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:point.x,y:point.y}]});
       await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       await waitFor('page==='+JSON.stringify(section));
+      if(section==='scanner'){
+        const geometry=await evaluate('(()=>{const v=document.querySelector(".psc-viewport").getBoundingClientRect(),g=document.querySelector(".psc-guidebox").getBoundingClientRect();return {inside:g.top>=v.top&&g.bottom<=v.bottom&&g.left>=v.left&&g.right<=v.right,ratio:g.width/g.height}})()');
+        assert.ok(geometry.inside,'Guide must fit video at '+width);
+        assert.ok(Math.abs(geometry.ratio-5/7)<0.02,'Card guide aspect ratio');
+      }
       const actual=await evaluate('document.documentElement.scrollWidth');
       assert.ok(actual<=width,section+' at '+width+' overflows to '+actual);
     }

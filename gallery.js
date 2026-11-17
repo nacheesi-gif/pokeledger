@@ -24,11 +24,11 @@ function sources(item){
    (!t.unit || t.unit==="USD") && Number.isFinite(v?.marketPrice) && v.marketPrice>=0
  ).map(([variant,v])=>({variant,price:v.marketPrice,productId:v.productId}));
  const stamp=updated?updated.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"date unavailable";
- const title="TCGplayer via TCGdex · "+stamp+" · confirm condition on TCGplayer";
+ const title="TCGplayer via "+(t.provider==="TCGCSV"?"TCGCSV":"TCGdex")+" · "+stamp+" · confirm condition on TCGplayer";
  const values=variants.map(v=>v.variant.replaceAll("-"," ")+" "+money(v.price)).join(" · ");
  const label=values?(stale?"Historical · ":"")+"TCGplayer Market Price · "+values:"TCGplayer Market Price unavailable";
  return {label,title,variants,price:!stale && variants.length===1?variants[0].price:null,
-   variant:variants.length===1?variants[0].variant:variants.length?"multiple":null,stale,updated:updated?.toISOString()||null};
+   variant:variants.length===1?variants[0].variant:variants.length?"multiple":null,stale,provider:t.provider==="TCGCSV"?"TCGCSV":"TCGdex",updated:updated?.toISOString()||null};
 }
 async function load(id){
  if(!valid(id))throw Error("Invalid card ID");
