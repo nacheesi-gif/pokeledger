@@ -42,3 +42,18 @@ The repository/source and website are public. **Your personal collection and fin
 - TCGdex API: https://tcgdex.dev/
 - Tesseract.js OCR: https://github.com/naptha/tesseract.js
 - Gen III box sprites: https://github.com/PokeAPI/sprites
+
+## Binder, card zoom and market-value labels
+
+- **My Binder** (previously **My Collection**) contains owned and grading cards. Ownership and purchases are unchanged by the rename.
+- Clicking a card picture in My Binder, Explore Sets, or scanner results opens a large image with a market summary and source-detail action. Images use the high-resolution TCGdex rendition where available.
+- Card-grid price chips load near the viewport from TCGdex TCGplayer raw-market pricing when provided. Multiple finish variants display **From $X** rather than claiming a specific finish; cards without a quote display **Value N/A**. Owned cards with manually saved prices show **saved** (not a live price).
+- Confirm set, card number, condition, edition, and holo variant when checking sale comparisons.
+
+## Slab Verify (beta)
+
+- The separate **Slab Verify** tab reads English slab labels using an uploaded photo or a live camera and OCR. It suggests cert number, grader and grade for user confirmation. It supports official links for PSA, CGC Cards, Beckett BGS/BVG/BCCG, TAG, AGS, SGC and HGA; other graders can be entered manually.
+- The app opens the original grading company's public verification site; available data and authentication services differ by grader, and automated registry access is **not** claimed.
+- It provides eBay *completed/sold* searches and PriceCharting graded comparisons. A graded-market estimate is user entered, not invented or silently substituted from a raw quote.
+- Slab verification statuses are **Not verified**, **Official cert record manually matched**, and **Discrepancy reported**. Green means the user checked the official cert details, **not** that the physical slab is guaranteed genuine, unaltered, or unflagged. Some physical authentication needs company-specific tools or an expert.
+- Slab checks are saved in the same local JSON backup, separate from owned inventory, to avoid double-counting a slab that is already recorded as an owned card.
