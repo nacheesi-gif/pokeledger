@@ -19,7 +19,7 @@ function makeLinks(card){
 function bestPrices(card){
  const t=card.pricing?.tcgplayer;
  if(!t)return "<div class='pm-muted'>No TCGplayer pricing was returned for this card.</div>";
- const variants=Object.entries(t).filter(([key,val])=>val&&typeof val==="object"&&Number.isFinite(Number(val.marketPrice))&&!Array.isArray(val));
+ const variants=Object.entries(t).filter(([key,val])=>val&&typeof val==="object"&&typeof val.marketPrice==="number"&&Number.isFinite(val.marketPrice)&&!Array.isArray(val));
  let date=t.updated?new Date(Number(t.updated)*(Number(t.updated)>1e11?1:1000)).toLocaleString("en-US",{month:"short",day:"numeric",year:"numeric"}):"Not provided";
  let lines=variants.map(([name,values])=>'<div class="pm-price"><span><b>'+E(name.replaceAll("-"," "))+'</b><small>Market snapshot</small></span><strong>'+usd(Number(values.marketPrice))+'</strong></div>').join("");
  return '<p class="pm-muted">TCGplayer market data via TCGdex · Last fetched '+E(date)+' · currency '+E(t.unit||"USD")+'</p>'+(lines||"<p>No market-price variants available.</p>")+'<p class="pm-muted">These are market-price snapshots, not independently verified individual completed sales. Use the links below to inspect sold listings directly.</p>';
