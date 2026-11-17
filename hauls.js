@@ -80,8 +80,8 @@ function submit(formEl){
    const old=db.statuses[c.id]||{},oldQty=["Owned","Grading"].includes(old.state)?Math.max(0,Number(old.qty)||0):0;
    const oldCost=old.unitCost===null||old.unitCost===undefined||old.unitCost===""?null:Number(old.unitCost);
    const newQty=oldQty+line.qty;
-   const blended=oldQty&&Number.isFinite(oldCost)&&oldCost>=0?(oldCost*oldQty+line.unitCost*line.qty)/newQty:line.unitCost;
-   db.statuses[c.id]={...old,state:"Owned",owner:fields.owner,qty:newQty,unitCost:Math.round(blended*10000)/10000,condition:line.condition,marketUnitValue:line.mv===null?(old.marketUnitValue??null):line.mv,marketAsOf:line.mv===null?(old.marketAsOf??""):recordDate,marketSource:line.mv===null?(old.marketSource??""):"User-entered haul estimate"};
+   const blended=oldQty?(oldCost!==null&&Number.isFinite(oldCost)&&oldCost>=0?(oldCost*oldQty+line.unitCost*line.qty)/newQty:null):line.unitCost;
+   db.statuses[c.id]={...old,state:"Owned",owner:fields.owner,qty:newQty,unitCost:blended===null?null:Math.round(blended*10000)/10000,condition:line.condition,marketUnitValue:line.mv===null?(old.marketUnitValue??null):line.mv,marketAsOf:line.mv===null?(old.marketAsOf??""):recordDate,marketSource:line.mv===null?(old.marketSource??""):"User-entered haul estimate"};
    cards.push({cardId:c.id,name:c.name,set:c.set,number:c.number,qty:line.qty,unitCost:line.unitCost,marketUnitValue:line.mv,condition:line.condition});
  }
  db.transactions.push({id:haulId,kind:"purchase",title:fields.title,date:recordDate,amount:paid/100,owner:fields.owner,merchant:fields.merchant||"",purpose:fields.purpose||"Hobby / family",type:fields.type||"Singles",receipt:fields.receipt||"",notes:fields.notes||"",haulCards:cards});
