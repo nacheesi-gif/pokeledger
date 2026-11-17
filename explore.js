@@ -198,7 +198,7 @@
    repaint();
    // Enrich the visible cards in small batches; downloading every card across
    // a large category at once would overwhelm a mobile connection.
-   if(x.cards.length)enrich(t);
+   if(x.cards.length&&!x.running)enrich(t);
  }
  function retryGroup(){if(x.set?.combinedGroup){x.setError="";if(x.combinedNext>=x.combinedSets.length)x.combinedNext=0;loadMoreGroupSets()}}
  async function openAllTG(){x.group="tg";return openAllGroup()}
@@ -215,7 +215,7 @@
    }catch(e){if(x.token!==t)return;x.working=false;x.setError=e.message;repaint()}
  }
  async function enrich(t){
-   const todo=x.cards.filter(c=>!x.details[c.id]).slice(0,x.set?.combinedGroup?48:Infinity);if(!todo.length)return;
+   const todo=x.cards.slice(0,Math.min(x.cards.length,x.limit+12)).filter(c=>!x.details[c.id]);if(!todo.length||document.hidden)return;
    x.running=true;let index=0,finished=0;
    async function worker(){
      while(t===x.token && index<todo.length){
@@ -223,10 +223,10 @@
        try{const obj=await fetchJSON("/cards/"+encodeURIComponent(c.id));if(t!==x.token)return;x.details[c.id]={rarity:obj.rarity||"",illustrator:obj.illustrator||"",set:obj.set||null};if(x.set?.artistName){c.set=obj.set||c.set;c.rarity=obj.rarity||c.rarity;c.illustrator=obj.illustrator||c.illustrator}}
        catch{if(t!==x.token)return;x.details[c.id]={rarity:""}}
        finished++;x.progress++;
-       if(finished%12===0||finished===todo.length)repaintCards();
+       if(!document.hidden&&(finished%24===0||finished===todo.length))repaintCards();
      }
    }
-   await Promise.all(Array.from({length:Math.min(5,todo.length)},worker));
+   await Promise.all(Array.from({length:Math.min(2,todo.length)},worker));
    if(t===x.token){
       x.running=false;
       const data=cache(),details=data.details||{};
@@ -237,7 +237,7 @@
  function searchCards(q){x.search=q;x.limit=48;repaintCards()}
  function rarityFilter(r){x.rarity=r;x.limit=48;repaintCards()}
  function sortCards(v){x.sort=v;x.limit=48;repaintCards()}
- function moreCards(){x.limit+=48;repaintCards()}
+ function moreCards(){x.limit+=48;repaintCards();if(x.set&&!x.running)enrich(x.token)}
  function owner(v){x.owner=v}
  function category(c){
    const r=(x.details[c.id]?.rarity||"").toLowerCase();
