@@ -29,6 +29,7 @@ async function load(id){
  if(cache.has(id))return cache.get(id);
  const promise=window.PokeMarket?.load?window.PokeMarket.load(id):fetch("https://api.tcgdex.net/v2/en/cards/"+encodeURIComponent(id)).then(r=>{if(!r.ok)throw Error("Price unavailable");return r.json()});
  cache.set(id,promise);
+ promise.catch(()=>{if(cache.get(id)===promise)cache.delete(id)});
  if(cache.size>320)cache.delete(cache.keys().next().value);
  return promise;
 }
@@ -56,7 +57,7 @@ async function apply(el,id){
    if(el.isConnected){el.textContent="Check price ↗";el.title="Market quote unavailable. Open direct marketplace links to verify.";el.classList.add("pk-no-price")}
  }
 }
-function drain(){while(pool<4&&queue.length){const [el,id]=queue.shift();if(!el.isConnected)continue;pool++;apply(el,id).finally(()=>{pool--;drain()})}}
+function drain(){if(document.hidden)return;const concurrency=navigator.connection?.saveData?1:3;while(pool<concurrency&&queue.length){const [el,id]=queue.shift();if(!el.isConnected)continue;pool++;apply(el,id).finally(()=>{pool--;drain()})}}
 function enqueue(el){if(el.dataset.queued)return;el.dataset.queued="yes";queue.push([el,el.getAttribute("data-pkprice")]);drain()}
 function observePrices(root){
  if(document.hidden)return;
@@ -88,7 +89,7 @@ function start(){
    }
  });
  rootObserver.observe(node,{childList:true,subtree:true});
- document.addEventListener("visibilitychange",()=>{if(!document.hidden)observePrices()});
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden){observePrices();drain()}});
  observePrices();
 }
 const hi=image=>{
