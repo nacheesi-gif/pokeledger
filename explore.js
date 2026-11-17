@@ -230,5 +230,5 @@
  @media(max-width:550px){.px-head{padding:14px}.px-head h1{font-size:21px}.px-head p{font-size:12px}.px-setgrid,.px-cardgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.px-set{min-height:140px}.px-controls input.field{flex:1 1 100%}.px-controls select.field{flex:1 1 47%;max-width:none}.px-selectedlogo{max-width:75px;max-height:60px}}
  </style>`;
  document.head.insertAdjacentHTML("beforeend",styles);
- window.explorer=render;window.pxLoad=loadSets;window.pxGroup=selectGroup;window.pxSearchSets=searchSets;window.pxMoreSets=moreSets;window.pxCard=id=>x.cards.find(c=>c.id===id);window.pxOpen=openSet;window.pxArtist=openArtist;window.pxBack=back;window.pxSearchCards=searchCards;window.pxRarity=rarityFilter;window.pxSort=sortCards;window.pxMoreCards=moreCards;window.pxOwner=owner;window.pxAdd=add;
+ window.explorer=render;window.pxLoad=loadSets;window.pxGroup=selectGroup;window.pxSearchSets=searchSets;window.pxMoreSets=moreSets;window.pxCard=id=>{const c=x.cards.find(item=>item.id===id);return c?{...c,set:c.set||x.set?.name||'',number:sourceNum(c,x.set)}:null};window.pxOpen=openSet;window.pxArtist=openArtist;window.pxBack=back;window.pxSearchCards=searchCards;window.pxRarity=rarityFilter;window.pxSort=sortCards;window.pxMoreCards=moreCards;window.pxOwner=owner;window.pxAdd=add;
 })();
