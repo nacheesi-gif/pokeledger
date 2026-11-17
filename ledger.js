@@ -106,7 +106,8 @@ function sumRows(rows, profile = "all") {
   return rows.reduce((sum, transaction) => sum + Math.round(amountFor(transaction, profile) * 100), 0) / 100;
 }
 function call(method, argument) { return E("LedgerUI." + method + "(" + JSON.stringify(argument) + ")"); }
-function sprite(name, className = "") { return '<span class="ledger-sprite ' + className + '">' + gen3Sprite(name) + '</span>'; }
+const CHARIZARD_ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgBAMAAACBVGfHAAAAG1BMVEVKnDlBQUFiSs1iYlq9pEHVYkH2lCn29in///9uqozKAAAAAXRSTlMAQObYZgAAANJJREFUKFPVy0FqwzAUhOFf6AJ6BomuBd27ODa9hjBjunVBrycoWXeRe2fhpk16g87qvY8Z+AcxS4+/1I4rJOJE0PbxeVRKYvHJTH7+AXMvblp2gLAT9lmlusX2DaVFtVq7KQHlxXpitqFW5QSUXpphslprGyG4+yyThqHW5wTBvUva/L1Ws6ORW97cfTZphLztlxbkZcnKKwSXXRK5ffUbdBlhLd6kNgK5G0Q9KUsrQDCAudnqBwAQ19N5cY2/ME2npd8BEKe7BQCvb38gTg+LW65F6zDfDvWrhwAAAABJRU5ErkJggg==";
+function sprite(name, className = "") { return '<span class="ledger-sprite ' + className + '">' + (name === 'charizard' ? '<img class="spriteIcon" src="' + CHARIZARD_ICON + '" alt="" width="32" height="32" decoding="async">' : gen3Sprite(name)) + '</span>'; }
 function header() {
   return '<header class="ledger-header"><div class="brand">Poké<em>Ledger</em></div>' +
     '<button type="button" class="save-chip" onclick="nav(\'settings\')" title="Phone storage and backups">' +
@@ -156,7 +157,7 @@ function welcome() {
     '<small>Open from the same home-screen icon each time to continue your saved ledger.</small></section>';
 }
 function profileCards() {
-  const cards = db.members.map((name, index) => ({key:"person:"+name, label:name, icon:["eevee","jolteon","vaporeon","flareon"][index % 4], color:["yellow","blue","pink","mint"][index % 4]}));
+  const cards = db.members.map((name, index) => ({key:"person:"+name, label:name, icon:["charizard","jolteon","vaporeon","flareon"][index % 4], color:["yellow","blue","pink","mint"][index % 4]}));
   cards.push({key:"resale", label:"Resale", icon:"umbreon", color:"mint"});
   return '<div class="ledger-profiles">' + cards.map(card => {
     const rows = selectedPurchases(card.key);
@@ -182,7 +183,7 @@ function transactionRow(transaction, showProfile = "all") {
   const amount = transaction.kind === "purchase" ? amountFor(transaction, showProfile) : Number(transaction.amount) || 0;
   const parts = transaction.kind === "purchase" ? expenseParts(transaction) : [];
   const who = parts.length > 1 ? "Split receipt" : parts[0]?.purpose === RESALE ? "Resale" : transaction.owner || "Me";
-  const icon = transaction.kind === "sale" ? "flareon" : transaction.kind === "cashout" ? "umbreon" : who === "Maz" ? "jolteon" : who === "Lalie" ? "vaporeon" : "eevee";
+  const icon = transaction.kind === "sale" ? "flareon" : transaction.kind === "cashout" ? "umbreon" : who === db.members[0] ? "charizard" : who === "Maz" ? "jolteon" : who === "Lalie" ? "vaporeon" : "eevee";
   const caption = [transaction.merchant || who, transaction.date].filter(Boolean).join(" · ");
   return '<button type="button" class="ledger-transaction" onclick="' + call("details", transaction.id) + '">' + sprite(icon) +
     '<span class="transaction-copy"><b>' + E(transaction.title) + '</b><small>' + E(caption) + '</small></span>' +
@@ -243,7 +244,7 @@ function settings() {
     '</small><div class="ledger-action-grid"><button class="btn primary" onclick="exportJSON()">Export backup JSON</button><button class="btn" onclick="importDialog()">Import backup</button></div>' +
     '<button class="text-button" onclick="exportCSV()">Export transactions CSV →</button>' +
     (previousData() ? '<div class="previous-backup"><b>Previous PokéLedger records</b><p>Your copy from before the fresh start is available here.</p><button class="btn" onclick="LedgerUI.exportPrevious()">Download previous backup</button></div>' : "") +
-    '</section><section class="ledger-panel"><h2>YOUR PEOPLE</h2>' + db.members.map((name,index) => '<div class="profile-setting">' + sprite(["eevee","jolteon","vaporeon"][index%3]) +
+    '</section><section class="ledger-panel"><h2>YOUR PEOPLE</h2>' + db.members.map((name,index) => '<div class="profile-setting">' + sprite(["charizard","jolteon","vaporeon"][index%3]) +
     '<b>' + E(name) + '</b><button class="text-button" onclick="' + call("renameProfile", name) + '">Rename</button></div>').join("") +
     '<button class="text-button" onclick="LedgerUI.addProfile()">+ Add profile</button></section>' +
     '<section class="ledger-panel"><div class="ledger-section-head"><h2>MONTHLY BUDGETS</h2><button class="btn" onclick="LedgerUI.openBudgets()">Edit budgets</button></div><p>Personal + kids ' +
