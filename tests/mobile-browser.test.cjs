@@ -27,18 +27,20 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   const url = 'http://127.0.0.1:' + server.address().port + '/pokeledger/';
   const chrome = spawn(process.env.CHROME_BIN || 'google-chrome', [
     '--headless','--no-sandbox','--disable-dev-shm-usage','--remote-debugging-port=0',
-    '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost','--user-data-dir='+root,'about:blank'
-  ],{stdio:'ignore'});
+    '--disable-background-networking','--disable-gpu','--no-first-run','--user-data-dir='+root,'about:blank'
+  ],{stdio:['ignore','ignore','pipe']});
+  let diagnostics='';
+  chrome.stderr.on('data',chunk=>{diagnostics=(diagnostics+chunk).slice(-1500);});
   t.after(async () => {
     chrome.kill('SIGKILL'); server.closeAllConnections(); server.close();
     await fs.rm(root,{recursive:true,force:true,maxRetries:5,retryDelay:100});
   });
   let port;
-  for (let i=0;i<100 && !port;i++) {
+  for (let i=0;i<200 && chrome.exitCode===null && !port;i++) {
     try {port=(await fs.readFile(path.join(root,'DevToolsActivePort'),'utf8')).split('\n')[0];}
     catch {await delay(100);}
   }
-  assert.ok(port,'Chrome must start');
+  assert.ok(port,'Chrome startup: '+diagnostics);
   const targets=await (await fetch('http://127.0.0.1:'+port+'/json/list')).json();
   const ws=new WebSocket(targets.find(tab=>tab.type==='page').webSocketDebuggerUrl);
   await new Promise((resolve,reject)=>{ws.onopen=resolve;ws.onerror=reject;});
