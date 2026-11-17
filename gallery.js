@@ -7,11 +7,12 @@ const valid=id=>/^[\w.+-]+$/.test(String(id||""));
 function money(x){return "$"+Number(x).toFixed(2)}
 function sources(item){
  const t=item?.pricing?.tcgplayer||{};
+ const rawTime=t.updated;let stamp="date unavailable";if(rawTime){const time=typeof rawTime==="number"?new Date(rawTime*(rawTime>1e11?1:1000)):new Date(rawTime);if(Number.isFinite(time.getTime()))stamp="as of "+time.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}
  const variants=Object.entries(t).filter(([key,v])=>v&&typeof v==="object"&&typeof v.marketPrice==="number"&&Number.isFinite(v.marketPrice)&&v.marketPrice>=0).map(([key,v])=>({variant:key,price:v.marketPrice}));
  if(!variants.length)return {label:"Price N/A",title:"No TCGplayer raw market snapshot for this printing.",price:null,variant:null};
- if(variants.length===1)return {label:money(variants[0].price),title:"Raw TCGplayer market snapshot · "+variants[0].variant+" · verify exact finish",price:variants[0].price,variant:variants[0].variant};
+ if(variants.length===1)return {label:money(variants[0].price),title:"Raw TCGplayer market snapshot · "+variants[0].variant+" · "+stamp+" · verify exact finish",price:variants[0].price,variant:variants[0].variant};
  const min=Math.min(...variants.map(v=>v.price));
- return {label:"From "+money(min),title:"Raw TCGplayer market estimates vary by finish. Lowest listed variant; open details to choose the correct one.",price:null,variant:"multiple"};
+ return {label:"From "+money(min),title:"Raw TCGplayer market estimates vary by finish · "+stamp+". Lowest listed variant; open details to choose the correct one.",price:null,variant:"multiple"};
 }
 async function load(id){
  if(!valid(id))throw Error("Invalid card ID");
@@ -22,7 +23,7 @@ async function load(id){
 }
 function badge(id,owned){
  const st=owned&&typeof db!=="undefined"?db.statuses?.[owned]:null;
- if(st&&st.marketUnitValue!==null&&st.marketUnitValue!==undefined&&st.marketUnitValue!==""&&Number.isFinite(Number(st.marketUnitValue)))return '<span class="pk-price-badge pk-own-price" title="Your saved per-card market value · verify date and finish">'+money(st.marketUnitValue)+' <small>saved</small></span>';
+ if(st&&st.marketUnitValue!==null&&st.marketUnitValue!==undefined&&st.marketUnitValue!==""&&Number.isFinite(Number(st.marketUnitValue)))return '<span class="pk-price-badge pk-own-price" title="Your saved per-card market value ${E(st.marketAsOf||"date not provided")} · verify finish">'+money(st.marketUnitValue)+' <small>saved</small></span>';
  if(!id||!valid(id))return '<span class="pk-price-badge pk-no-price">Value N/A</span>';
  return '<span class="pk-price-badge pk-live-price" data-pkprice="'+E(id)+'" title="Market value fetching">Checking value…</span>';
 }
