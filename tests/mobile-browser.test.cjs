@@ -27,7 +27,7 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   const url = 'http://127.0.0.1:' + server.address().port + '/pokeledger/';
   const chrome = spawn(process.env.CHROME_BIN || 'google-chrome', [
     '--headless','--no-sandbox','--disable-dev-shm-usage','--remote-debugging-port=0',
-    '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost','--user-data-dir='+root,'about:blank'
+    '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost','--user-data-dir='+root,'about:blank'
   ],{stdio:'ignore'});
   t.after(async () => {
     chrome.kill('SIGKILL'); server.closeAllConnections(); server.close();
@@ -47,6 +47,7 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   const pending=new Map();
   ws.onmessage=event=>{
     const msg=JSON.parse(event.data);
+    if(msg.method==='Runtime.exceptionThrown')console.error(msg.params.exceptionDetails.exception?.description);
     if(!pending.has(msg.id))return;
     const {resolve,reject}=pending.get(msg.id);
     pending.delete(msg.id);
@@ -62,8 +63,11 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   };
   async function waitFor(expression){
     for(let i=0;i<100;i++){if(await evaluate(expression))return;await delay(100);}
-    assert.fail('Timed out waiting for '+expression);
+    assert.fail('Timed out waiting for '+expression+' at '+await evaluate('location.href+", nav: "+typeof nav+", body: "+document.body?.innerText.slice(0,100)'));
   }
+  await send('Runtime.enable');
+  await send('Network.enable');
+  await send('Network.setBlockedURLs',{urls:['https://*']});
   await send('Emulation.setTouchEmulationEnabled',{enabled:true});
   await send('Page.navigate',{url});
   await waitFor('!!navigator.serviceWorker?.controller && typeof nav==="function"');
