@@ -1,28 +1,44 @@
-# PokéLedger — Gen III Eeveelutions
+# PokéLedger — Pokémon Collection, Scan & Spending
 
-A mobile-friendly Pokémon collection, giveaway, family spending, and resale tracking app. Light theme, a Pokémon-logo-inspired wordmark, an unpixelated Poké Ball, and real **Generation III Ruby/Sapphire PC Box sprites**.
+A local-first, phone-friendly Pokémon collection organizer hosted by GitHub Pages.
 
-### Section icons
+## Main features
 
-- Dashboard — Eevee (133)
-- Collection — Vaporeon (134)
-- Spending — Jolteon (135)
-- Sales — Flareon (136)
-- Settings — Umbreon (197)
+- **My Collection** only shows cards actually owned or being graded, with quantities and household owners.
+- **Explore Sets** loads English Pokémon sets and reference artwork from TCGdex, with rarity filters and one-tap ownership.
+- **Artist collections** for **Tomokazu Komiya** and **Shinji Kanda**, searched by illustrator credit via TCGdex. English database coverage varies.
+- **Scan Cards** uses a webcam or uploaded image, Tesseract.js OCR on the device, and a TCGdex card-name/number lookup. Matches require manual confirmation. Auto mode repeats scans with an on-device OCR worker, not visual-art recognition. Real device performance and accuracy must be tested.
+- **Raw market snapshots** show TCGplayer market pricing from TCGdex when available, not individual confirmed completed-sales transactions.
+- **Source verification links** open TCGplayer search, eBay sold searches (raw/PSA 9/PSA 10), and PriceCharting. Graded prices are not automatically quoted without verified data.
+- **Custom collection binders** let one owned card appear in multiple overlapping user-created organizational collections. No duplication of ownership or purchase cost.
+- **Rename family profiles** while preserving earlier purchases and card ownership.
+- **Financial ledger** tracks purchases, sales, fees, LastPack cashouts, and family-vs-resale budgets without double-counting transfers.
+- **Backup/restore** exports and imports local JSON. Cloud sync remains optional.
 
-Sprites are 32×32 static PNGs embedded in `index.html` for offline availability. Source: [PokéAPI sprites](https://github.com/PokeAPI/sprites/tree/master/sprites/pokemon/versions/generation-iii/icons). The sprite repository is publicly accessible, but the underlying Pokémon artwork belongs to its respective rights holders; public hosting does not imply a free asset license.
+## Run and test
 
-### Hosting on iPhone
+Live site: https://nacheesi-gif.github.io/pokeledger/
 
-This repo is deployed through **GitHub Pages** at https://nacheesi-gif.github.io/pokeledger/ after Pages is enabled under Settings → Pages → Deploy from branch → `main`, `/(root)`.
+To test on desktop:
 
-Records are saved **locally on each browser/device**, not in the GitHub repository. Export and safely store JSON backups regularly. No cloud sync is required.
+1. Open PokéLedger on HTTPS in Chrome, Edge, or Safari.
+2. Select **Scan** and **Start camera**. Grant browser camera permission.
+3. Place one English Pokémon card within the guide frame; press **Read card** (or enable **Auto**).
+4. Review the matching card image, set/number, and raw market preview, and open **Value / sources** to verify.
+5. Choose a family member and a custom collection (created under My Collection), then press **Add owned**.
+6. Confirm the card in **My Collection** and export a **JSON backup** in Settings.
+7. Alternatively select **upload a card photo** if a webcam is unavailable.
 
-## My Collection vs Explore Sets (November 2026)
+### Important limitations
 
-- **My Collection** shows only cards explicitly marked Owned or Grading. The original 120 Trainer Gallery sample records remain available but are not counted as owned until marked.
-- **Explore Sets** uses the public [TCGdex API](https://tcgdex.dev) to discover English expansions, Black Star Promos, all four Trainer Gallery subsets, Galarian Gallery, vintage sets, and others. Pick a set to browse its complete checklist and click **Add to My Collection** for an owned card. Choose the family profile before adding.
-- Cards are sorted by rarity as card details load; rarity sorting is provisional until the metadata request finishes. Some public scans and rarity metadata are missing.
-- All owned cards, quantities, family assignments and spending records stay in PokéLedger's existing local storage key and JSON backup. Set browsing doesn't upload or store private ownership details with TCGdex, and exploring doesn't add cards by itself.
-- The public card API needs an internet connection when loading new sets. The app shell and some cached catalog metadata can be available offline.
-- Market price tracking and camera scanning are separate future enhancements; the Explore Sets tab does not imply live pricing.
+The scanning stage is an OCR-based prototype. It can misread collector numbers, reverse holo vs regular variants, Japanese text, stamps, and visually similar printings. Confirm every match before committing. Tesseract.js loads from an external CDN during the first scan; network required for initial OCR and card search. After first load the worker is reused. Actual phone-camera recognition and speed remain to be tested.
+
+Raw pricing may be missing or delayed. eBay sold pages may require sign-in; links are for independent verification, not an automated completed-sales feed. Not all cards have available PSA 9/10 pricing. Never count an estimated market price or a cashout as realized profit.
+
+The repository/source and website are public. **Your personal collection and financial records are saved in the current browser's localStorage, not in the public GitHub repository.** They do not automatically sync across devices. Export JSON regularly and never commit a backup containing personal financial data to the public repo.
+
+## Sources
+
+- TCGdex API: https://tcgdex.dev/
+- Tesseract.js OCR: https://github.com/naptha/tesseract.js
+- Gen III box sprites: https://github.com/PokeAPI/sprites
