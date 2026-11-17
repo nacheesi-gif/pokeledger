@@ -18,7 +18,7 @@ async function start(){
  if(!navigator.mediaDevices?.getUserMedia){state("Camera access is unavailable. Please open the HTTPS site in a supported browser, or upload a photo.","error");return}
  stop();try{
  const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:960}}});
- S.stream=stream;const video=document.getElementById("psc-video");if(!video){stream.getTracks().forEach(t=>t.stop());return}
+ if(document.hidden||page!=="scanner"){stream.getTracks().forEach(t=>t.stop());return}S.stream=stream;const video=document.getElementById("psc-video");if(!video){stream.getTracks().forEach(t=>t.stop());return}
  video.srcObject=stream;await video.play();state("Camera ready. Position one card and tap Read card.");
  }catch(e){state("Camera couldn't start: "+e.message+" . You can upload a card photo instead.","error")}
 }
