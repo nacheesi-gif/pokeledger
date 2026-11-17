@@ -61,3 +61,7 @@ The repository/source and website are public. **Your personal collection and fin
 ## All Cards (combined gallery)
 
 Explore Sets now also includes **View All Cards**, a combined browsing grid that searches every expansion, Trainer Gallery, Galarian Gallery, promo, and other English TCGdex cards without opening each set individually. Existing category filters and individual set checklists remain available. The combined view loads 48 cards at a time, supports full-catalog name search and **Show More Cards**, displays raw market badges where available, supports enlarged artwork, and lets you add cards directly to My Binder. The combined view reflects published TCGdex data and may not include every regional/Japanese-only printing.
+
+## Universal category galleries
+
+In **Explore Sets**, selecting a category containing multiple subsets—such as Trainer Galleries, Black Star Promos, IRs & SIRs, Scarlet & Violet, Sword & Shield, or Vintage—now displays a **View All [Category] Cards** option above its individual subset tiles. The combined view loads cards in batches of up to 3 subsets at a time (4 for Trainer Galleries), with **Load more subsets** for additional cards. Each card shows its origin set, image zoom, raw price label, detailed source links and My Binder ownership controls. Categories with just one subset, such as a single Galarian Gallery, retain their direct checklist; illustrator searches remain dedicated artist collections. Large-category rarity details load progressively; until fetched, rarity sorting/filtering is provisional.
