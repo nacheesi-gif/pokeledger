@@ -4,9 +4,9 @@ const API="https://api.tcgdex.net/v2/en";
 const E=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const safe=v=>String(v||"").replace(/[^a-zA-Z0-9._+-]/g,"");
 const x={active:false,cards:[],page:0,hasMore:true,busy:false,error:"",query:"",timer:null,serial:0,owner:"Me",details:{}};
-let memoSets=null;
+let memoSets=null,memoSetMap=null;
 function sets(){if(memoSets)return memoSets;try{const value=JSON.parse(localStorage.getItem("pokeledger-explore-cache-v1")||"{}").sets;memoSets=Array.isArray(value)?value:[];return memoSets}catch{return memoSets=[]}}
-function setFor(c){const id=String(c.id||"");return sets().find(s=>id.startsWith(s.id+"-"))||{id:id.slice(0,id.lastIndexOf("-")),name:id.slice(0,id.lastIndexOf("-"))}}
+function setFor(c){const id=String(c.id||""),setId=id.slice(0,id.lastIndexOf("-"));if(!memoSetMap)memoSetMap=new Map(sets().map(s=>[s.id,s]));return memoSetMap.get(setId)||{id:setId,name:setId}}
 function owned(c){return allCards().find(z=>z.tcgdexId===c.id||z.id==="ex-"+c.id)}
 function isOwned(c){const z=owned(c);return z&&["Owned","Grading"].includes(db.statuses[z.id]?.state)}
 function num(c){const s=setFor(c);return String(c.localId||"?")+(s.cardCount?.official?"/"+s.cardCount.official:"")}
