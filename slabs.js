@@ -11,7 +11,7 @@ const graders={
  HGA:["HGA","https://hybridgrading.com/cert"],
  OTHER:["Other grader",""]
 };
-let stream=null,worker=null,pendingWorker=null;
+let stream=null,worker=null,pendingWorker=null,qrLoading=null,reading=false;
 function data(){if(!Array.isArray(db.slabs))db.slabs=[];return db.slabs}
 function notice(message){const el=document.getElementById("sl-message");if(el)el.textContent=message}
 function lookup(grade,cert){let entry=graders[grade]||graders.OTHER,url=entry[1];if(grade==="PSA"&&/^\d{6,12}$/.test(cert||""))url+=""+"/"+encodeURIComponent(cert);return url}
@@ -32,7 +32,7 @@ function record(rec,index){
 function render(){
  const selectors=Object.entries(graders).map(([k,v])=>'<option value="'+k+'">'+E(v[0])+'</option>').join("");
  const history=data().map((r,i)=>record(r,i)).reverse().join("");
- return '<header class="sl-head"><h1>Slab Verification</h1><p>Read the certification label, compare the official registry record, and research graded-card sales.</p></header><div class="sl-layout"><section class="panel"><h2>Scan a slab label</h2><video class="sl-video" id="sl-video" playsinline muted autoplay></video><div class="controls"><button class="btn primary sm" onclick="slStart()">Start camera</button><button class="btn sm" onclick="slCapture()">Read label</button><button class="btn sm" onclick="slStop()">Stop</button></div><label class="sl-upload">Or upload a slab photo<input type="file" accept="image/*" onchange="slUpload(this)"></label><p id="sl-message" role="status" class="sl-help">OCR reads printed text locally. Confirm the details before checking the official source.</p></section><section class="panel"><h2>Certificate details</h2><form id="sl-form" onsubmit="event.preventDefault();slSave(this)"><div class="formGrid"><label>Grading company<select name="grader" class="field" onchange="slGrader(this.value)">'+selectors+'</select></label><label>Certificate number<input class="field" name="cert" required></label><label>Grade<input class="field" name="grade" placeholder="9, 9.5, 10…"></label><label>Card name<input class="field" name="cardName" required placeholder="Pokémon card"></label><label>Set / year<input class="field" name="set"></label><label>Card number<input class="field" name="cardNo"></label><label>Graded market value ($)<input class="field" name="value" min="0" step="0.01" type="number" placeholder="Optional · verify sold comps"></label><label>Price source<input class="field" name="valueSource" placeholder="eBay sold / PriceCharting"></label></div><div id="sl-official"><a class="sl-link sl-official" target="_blank" rel="noopener noreferrer" href="https://www.psacard.com/cert">PSA official cert lookup ↗</a></div><div class="sl-warning">Do not assume a slab is authentic from a number alone. Registry matches are confirmed manually. Look for discrepancies in the grade, printed label, physical holder, and registered images.</div><button class="btn primary" type="submit">Save slab details</button></form></section></div><section class="panel sl-history"><h2>Saved slab checks ('+data().length+')</h2>'+(history||'<p class="sl-help">No slabs recorded yet.</p>')+'</section>';
+ return '<header class="sl-head"><h1>Slab Verification</h1><p>Read the certification label, compare the official registry record, and research graded-card sales.</p></header><div class="sl-layout"><section class="panel"><h2>Scan a slab label</h2><video class="sl-video" id="sl-video" playsinline muted autoplay></video><div class="controls"><button class="btn primary sm" onclick="slStart()">Start camera</button><button class="btn sm" onclick="slCapture()">Read QR / label</button><button class="btn sm" onclick="slCapture(true)">Read QR only</button><button class="btn sm" onclick="slStop()">Stop</button></div><label class="sl-upload">Or upload a slab photo<input type="file" accept="image/*" onchange="slUpload(this)"></label><p id="sl-message" role="status" class="sl-help">QR and printed label text are read on this device. Show the QR side clearly, or use the label side for text. Confirm the details before checking the official source.</p></section><section class="panel"><h2>Certificate details</h2><form id="sl-form" onsubmit="event.preventDefault();slSave(this)"><div class="formGrid"><label>Grading company<select name="grader" class="field" onchange="slGrader(this.value)">'+selectors+'</select></label><label>Certificate number<input class="field" name="cert" required></label><label>Grade<input class="field" name="grade" placeholder="9, 9.5, 10…"></label><label>Card name<input class="field" name="cardName" required placeholder="Pokémon card"></label><label>Set / year<input class="field" name="set"></label><label>Card number<input class="field" name="cardNo"></label><label>Graded market value ($)<input class="field" name="value" min="0" step="0.01" type="number" placeholder="Optional · verify sold comps"></label><label>Price source<input class="field" name="valueSource" placeholder="eBay sold / PriceCharting"></label></div><div id="sl-official"><a class="sl-link sl-official" target="_blank" rel="noopener noreferrer" href="https://www.psacard.com/cert">PSA official cert lookup ↗</a></div><div class="sl-warning">Do not assume a slab is authentic from a number alone. Registry matches are confirmed manually. Look for discrepancies in the grade, printed label, physical holder, and registered images.</div><button class="btn primary" type="submit">Save slab details</button></form></section></div><section class="panel sl-history"><h2>Saved slab checks ('+data().length+')</h2>'+(history||'<p class="sl-help">No slabs recorded yet.</p>')+'</section>';
 }
 function graderChanged(k){const el=document.getElementById("sl-official");if(!el)return;const url=lookup(k,"");el.innerHTML=url?'<a class="sl-link sl-official" target="_blank" rel="noopener noreferrer" href="'+E(url)+'">Open '+E(graders[k][0])+' official lookup ↗</a>':'Official lookup may not be available online for this grading company.'}
 function saveRecord(f){const obj=Object.fromEntries(new FormData(f));const cert=String(obj.cert||"").replace(/\s+/g,"").slice(0,40);if(!/^[a-z0-9-]{5,40}$/i.test(cert)||!obj.cardName?.trim())return alert("Enter a card name and certification number.");const value=obj.value===""?"":Number(obj.value);if(value!==""&&(!Number.isFinite(value)||value<0))return alert("Check the value.");data().push({id:uid(),grader:obj.grader,cert,grade:String(obj.grade||""),cardName:String(obj.cardName).trim(),set:String(obj.set||""),cardNo:String(obj.cardNo||""),value,valueSource:String(obj.valueSource||""),status:"pending",date:today()});save();notice("Saved. Check official cert data before confirming a match.")}
@@ -62,13 +62,90 @@ async function start(){
 }
 async function ocrWorker(){if(worker)return worker;if(pendingWorker)return pendingWorker;pendingWorker=(async()=>{if(!window.Tesseract)await new Promise((resolve,reject)=>{const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";sc.onload=resolve;sc.onerror=()=>reject(new Error("OCR library failed"));document.head.append(sc)});return window.Tesseract.createWorker("eng")})();try{worker=await pendingWorker;return worker}finally{pendingWorker=null}}
 function parse(text){const form=document.getElementById("sl-form");if(!form)return;const grade=(text.match(/\b(PSA|CGC|BGS|BVG|BCCG|TAG|AGS|SGC|HGA)\b/i)||[])[1];if(grade){form.elements.grader.value=["BVG","BCCG"].includes(grade.toUpperCase())?"BGS":grade.toUpperCase();graderChanged(form.elements.grader.value)}const certMatch=text.match(/(?:CERT(?:IFICATION)?(?:IFICATE)?\s*(?:#|NO|NUMBER)?\s*[:#-]?\s*)([A-Z]?\d{7,12})/i);const nums=(text.match(/\b[A-Z]?\d{7,12}\b/g)||[]).sort((a,b)=>b.length-a.length);const cert=certMatch?.[1]||nums[0];if(cert)form.elements.cert.value=cert;const g=(text.match(/\b(?:GEM\s*MINT|PRISTINE|MINT|NM-MT)?\s*(10|9\.5|9|8\.5|8|7\.5|7)\b/i)||[])[1];if(g)form.elements.grade.value=g;const no=(text.match(/\b(?:TG|GG)?\d{1,3}\/\d{2,3}\b/i)||[])[0];if(no)form.elements.cardNo.value=no;notice(cert?"Possible certificate "+cert+" detected. Confirm the details on the slab, then open the official lookup.":"Text read, but cert recognition is uncertain. Enter it manually.")}
-async function analyze(canvas){notice("Reading label…");try{const result=await(await ocrWorker()).recognize(canvas);parse(result.data?.text||"")}catch(e){notice("OCR issue: "+e.message+". Manual entry is available.")}}
-function capture(){const v=document.getElementById("sl-video");if(!v?.videoWidth)return notice("Start the camera first.");const c=document.createElement("canvas");c.width=1200;c.height=650;c.getContext("2d").drawImage(v,0,0,v.videoWidth,v.videoHeight*.5,0,0,c.width,c.height);analyze(c)}
-function upload(input){const f=input.files?.[0];if(!f)return;const url=URL.createObjectURL(f),img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=1400;c.height=Math.max(350,Math.round(img.naturalHeight*1400/img.naturalWidth));c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);analyze(c);input.value=""};img.onerror=()=>{URL.revokeObjectURL(url);notice("Could not open image")};img.src=url}
-const css='<style id="slab-css">.sl-head{background:#eef6ff;border:1px solid #d4e4f7;border-radius:17px;padding:18px;margin:13px 0}.sl-head h1{font-size:25px}.sl-head p,.sl-help{font-size:12px;color:#6b7e98}.sl-layout{display:grid;grid-template-columns:1fr 1fr;gap:13px}.sl-video{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#182c50;border-radius:10px;margin:10px 0}.sl-upload{display:block;padding:11px;background:#eff7ff;border-radius:10px;margin:8px 0;font-size:12px;font-weight:800}.sl-upload input{display:block;margin-top:8px;max-width:100%}.sl-warning{color:#815c23;background:#fff4e3;border:1px solid #ead4b5;border-radius:10px;padding:11px;font-size:11px;margin:12px 0}.sl-history{margin-top:15px}.sl-record{border:1px solid #d6e5f6;border-radius:12px;padding:14px;margin:12px 0}.sl-record h3{font-size:17px;margin:5px 0}.sl-record p,.sl-disclaimer{font-size:12px;color:#667b93}.sl-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}.sl-status{font-size:11px;padding:5px 8px;border-radius:8px;background:#f0f2f7;color:#657083;font-weight:800}.sl-green{color:#146842;background:#def4e9}.sl-red{color:#b02c35;background:#ffebeb}.sl-links,.sl-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.sl-link{display:inline-block;border-radius:10px;padding:9px;border:1px solid #cde1f9;background:#f0f7ff;color:#2365a9;text-decoration:none;font-size:12px;font-weight:750}.sl-official{background:#e4f4e9;color:#186644;border-color:#bad8c4}@media(max-width:750px){.sl-layout{grid-template-columns:1fr}}</style>';
+function certFromQR(text,selected){
+ const raw=String(text||"").trim();
+ if(/^[0-9]{7,12}$/.test(raw))return {grader:selected,cert:raw};
+ try{
+  const url=new URL(raw);
+  if(url.protocol!=="https:")return null;
+  const host=url.hostname.toLowerCase().replace(/^www\./,"");
+  const psa=/^\/cert\/([0-9]{7,12})(?:\/|$)/i;
+  const cgc=/^\/certlookup\/([0-9]{7,12})(?:\/|$)/i;
+  if(["psacard.com","psa.com"].includes(host) && psa.test(url.pathname))
+   return {grader:"PSA",cert:url.pathname.match(psa)[1]};
+  if(["cgccomics.com","cgccards.com","cgcgrading.com"].includes(host) && cgc.test(url.pathname))
+   return {grader:"CGC",cert:url.pathname.match(cgc)[1]};
+ }catch{}
+ return null;
+}
+async function readQR(canvas){
+ if(!window.jsQR){
+  if(!qrLoading)qrLoading=new Promise((resolve,reject)=>{
+   const script=document.createElement("script");script.src="./vendor/jsQR.js";
+   script.onload=resolve;script.onerror=()=>reject(Error("QR decoder could not load"));document.head.append(script);
+  }).catch(error=>{qrLoading=null;throw error});
+  await qrLoading;
+ }
+ const ctx=canvas.getContext("2d"),pixels=ctx.getImageData(0,0,canvas.width,canvas.height);
+ const result=window.jsQR(pixels.data,pixels.width,pixels.height,{inversionAttempts:"attemptBoth"});
+ return result?.data||"";
+}
+async function analyze(canvas,qrOnly=false){
+ if(reading)return;
+ reading=true;
+ const request=cameraRequest;
+ notice("Reading QR code…");
+ try{
+  const text=await readQR(canvas);
+  if(request!==cameraRequest || document.hidden)return;
+  const form=document.getElementById("sl-form");if(!form)return;
+  const cert=certFromQR(text,form.elements.grader.value);
+  if(cert){
+   form.elements.grader.value=cert.grader;form.elements.cert.value=cert.cert;
+   graderChanged(cert.grader);
+   const link=document.querySelector("#sl-official a");
+   if(link)link.href=lookup(cert.grader,cert.cert);
+   notice("QR certificate "+cert.cert+" read. Open the official record to check the card details.");
+   return;
+  }
+  if(qrOnly){
+   notice(text?"QR read, but its certificate format is unsupported. Enter the cert number manually.":
+    "No QR found. Show the QR side of the slab closer, keep it sharp and avoid glare, then retry.");
+   return;
+  }
+  notice("Reading printed label…");
+  const result=await(await ocrWorker()).recognize(canvas);
+  if(request===cameraRequest && !document.hidden)parse(result.data?.text||"");
+ }catch(error){
+  notice("Scan could not finish: "+error.message+". Retry or enter the cert manually.");
+ }finally{reading=false}
+}
+function imageFrame(image,width,height){
+ const scale=Math.min(1,1800/Math.max(width,height));
+ const canvas=document.createElement("canvas");
+ canvas.width=Math.round(width*scale);canvas.height=Math.round(height*scale);
+ canvas.getContext("2d").drawImage(image,0,0,canvas.width,canvas.height);
+ return canvas;
+}
+function capture(qrOnly=false){
+ const video=document.getElementById("sl-video");
+ if(!video?.videoWidth)return notice("Start the camera first.");
+ return analyze(imageFrame(video,video.videoWidth,video.videoHeight),qrOnly);
+}
+function upload(input){
+ const file=input.files?.[0];if(!file)return;
+ const url=URL.createObjectURL(file),image=new Image();
+ image.onload=()=>{
+  const canvas=imageFrame(image,image.naturalWidth,image.naturalHeight);
+  URL.revokeObjectURL(url);input.value="";analyze(canvas);
+ };
+ image.onerror=()=>{URL.revokeObjectURL(url);notice("Could not open image")};
+ image.src=url;
+}
+const css='<style id="slab-css">.sl-head{background:#eef6ff;border:1px solid #d4e4f7;border-radius:17px;padding:18px;margin:13px 0}.sl-head h1{font-size:25px}.sl-head p,.sl-help{font-size:12px;color:#6b7e98}.sl-layout{display:grid;grid-template-columns:1fr 1fr;gap:13px}.sl-video{display:block;width:100%;aspect-ratio:3/4;object-fit:contain;background:#182c50;border-radius:10px;margin:10px 0}.sl-upload{display:block;padding:11px;background:#eff7ff;border-radius:10px;margin:8px 0;font-size:12px;font-weight:800}.sl-upload input{display:block;margin-top:8px;max-width:100%}.sl-warning{color:#815c23;background:#fff4e3;border:1px solid #ead4b5;border-radius:10px;padding:11px;font-size:11px;margin:12px 0}.sl-history{margin-top:15px}.sl-record{border:1px solid #d6e5f6;border-radius:12px;padding:14px;margin:12px 0}.sl-record h3{font-size:17px;margin:5px 0}.sl-record p,.sl-disclaimer{font-size:12px;color:#667b93}.sl-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}.sl-status{font-size:11px;padding:5px 8px;border-radius:8px;background:#f0f2f7;color:#657083;font-weight:800}.sl-green{color:#146842;background:#def4e9}.sl-red{color:#b02c35;background:#ffebeb}.sl-links,.sl-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.sl-link{display:inline-block;border-radius:10px;padding:9px;border:1px solid #cde1f9;background:#f0f7ff;color:#2365a9;text-decoration:none;font-size:12px;font-weight:750}.sl-official{background:#e4f4e9;color:#186644;border-color:#bad8c4}@media(max-width:750px){.sl-layout{grid-template-columns:1fr}}</style>';
 document.head.insertAdjacentHTML("beforeend",css);
 window.addEventListener("pagehide",stop);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stop()});
-window.PokeSlabs={render,stop,parse,salesLinks};
+window.PokeSlabs={render,stop,parse,salesLinks,certFromQR,readQR,imageFrame};
 window.slStart=start;window.slStop=()=>{stop();notice("Camera stopped")};window.slCapture=capture;window.slUpload=upload;window.slGrader=graderChanged;window.slSave=saveRecord;window.slReview=review;
 })();

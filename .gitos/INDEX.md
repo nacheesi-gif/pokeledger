@@ -7,6 +7,8 @@
 
 - [WO-007](work-orders/WO-007.md) — Display TCGplayer Market Price per finish, alongside saved values.
 
+- [WO-008](work-orders/WO-008.md) — Repair phone guide/capture alignment, add local QR decoding and daily price cache for all Pokemon sets.
+
 ## Next (scoped proposals — not yet implemented)
 - WO-002 — Measure 500-card/1,000-transaction real-device performance, then optimize observed bottlenecks.
 - WO-003 — Audit and test data import/export + cloud conflict handling with known-answer fixtures.

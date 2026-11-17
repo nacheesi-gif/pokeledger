@@ -13,4 +13,5 @@ const sw=fs.readFileSync("sw.js","utf8");
 for(const file of files.filter(f=>f!=="sw.js"))assert.ok(sw.includes("'./"+file+"'"),file+" is listed in service worker shell");
 assert.ok(/const CACHE='pokeledger-[^']+'/.test(sw),"versioned service-worker cache");
 assert.ok(html.includes("pokeledger-v1"),"retains original local data key");
+new vm.Script(fs.readFileSync("vendor/jsQR.js","utf8"),{filename:"vendor/jsQR.js"});
 console.log("PASS: "+files.length+" scripts, inline HTML, shell wiring, cache version and storage key");
