@@ -16,6 +16,10 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
     const file = new URL(req.url, 'http://localhost').pathname.match(/^\/pokeledger\/((?:(?:vendor|data\/tcgplayer-prices)\/)?[\w.-]*)$/)?.[1];
     try {
       if (file === undefined || file.startsWith('.')) throw Error();
+      if(file==='data/tcgplayer-prices/999.json'){
+        res.writeHead(200,{'Content-Type':'application/json'}).end(JSON.stringify({unit:'USD',updated:new Date().toISOString(),products:{'9990001':{holofoil:2.79}}}));
+        return;
+      }
       const name = file || 'index.html';
       const type = {html:'text/html',js:'text/javascript',png:'image/png',webmanifest:'application/manifest+json',svg:'image/svg+xml',json:'application/json'}[name.split('.').pop()];
       if (!type) throw Error();
@@ -76,6 +80,8 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   const manifest=await send('Page.getAppManifest');
   assert.deepEqual(manifest.errors,[]);
   assert.equal(JSON.parse(manifest.data).display,'standalone');
+  const testPrice=await evaluate('PokeMarket.supplement({id:"fixture-1",thirdParty:{tcgplayer:9990001}})');
+  assert.equal(testPrice.pricing.tcgplayer.holofoil.marketPrice,2.79);
   const fixture={members:['Fixture'],cards:[],statuses:{},transactions:[],budget:43};
   await evaluate('localStorage.setItem("pokeledger-v1",'+JSON.stringify(JSON.stringify(fixture))+')');
   // Disconnect the actual origin, including service-worker fetches.
@@ -83,6 +89,17 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   await new Promise(resolve=>server.close(resolve));
   await send('Page.navigate',{url:url+'index.html?offline-check'});
   await waitFor('location.search==="?offline-check" && typeof db!=="undefined" && db.members[0]==="Fixture"');
+  const cachedPrice=await evaluate('fetch("./data/tcgplayer-prices/999.json").then(r=>r.json())');
+  assert.equal(cachedPrice.products['9990001'].holofoil,2.79);
+  const matrix=JSON.parse(await fs.readFile('tests/qr-fixture.json','utf8'));
+  const qrResult=await evaluate('('+ (async modules=>{
+    const size=(modules.length+8)*6,canvas=document.createElement('canvas');
+    canvas.width=canvas.height=size;
+    const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,size,size);ctx.fillStyle='black';
+    for(let y=0;y<modules.length;y++)for(let x=0;x<modules.length;x++)if(modules[y][x])ctx.fillRect((x+4)*6,(y+4)*6,6,6);
+    return PokeSlabs.readQR(canvas);
+  }).toString()+')('+JSON.stringify(matrix)+')');
+  assert.equal(qrResult,'https://www.psacard.com/cert/12345678');
   for(const width of [320,390,430]){
     await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:2,mobile:true});
     for(const section of ['collection','scanner','slabs','restocks','spending','sales','settings','dashboard','explore']){
