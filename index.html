@@ -164,7 +164,7 @@ function editBudget(){show(`<h2>Monthly budgets</h2><p class="mutedLine">Use sep
 function addMember(){let x=prompt('Name of collection profile (e.g. Maz):');if(!x)return;x=x.trim();if(db.members.some(y=>y.toLowerCase()===x.toLowerCase()))return alert('Profile already exists');db.members.push(x);save()}
 function deleteTx(id){if(confirm('Remove this transaction permanently?')){db.transactions=db.transactions.filter(t=>t.id!==id);save()}}
 function resetData(){if(prompt('Type RESET to delete all personal purchases, sales and collection status:')!=='RESET')return;db=initial();save()}
-function download(name,content,mime){const blob=new Blob([content],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000)}
+function download(name,content,mime){const blob=new Blob([content],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)}
 function exportJSON(){download('pokeledger-v2-backup-'+today()+'.json',JSON.stringify(db,null,2),'application/json')}
 function csvCell(x){return '"'+String(x??'').replace(/"/g,'""')+'"'}
 function exportCSV(){let keys=['kind','date','title','amount','grossAmount','purpose','owner','type','merchant','destination','receipt','fees','shipping','costBasis','cardId','notes'];let content=[keys.join(','),...db.transactions.map(t=>keys.map(k=>csvCell(t[k])).join(','))].join('\n');download('pokeledger-transactions-'+today()+'.csv',content,'text/csv')}

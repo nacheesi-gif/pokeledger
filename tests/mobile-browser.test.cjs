@@ -78,15 +78,21 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   await send('Page.navigate',{url});
   await waitFor('!!navigator.serviceWorker?.controller && typeof nav==="function"');
 
+  const previous={members:['Me','Kid 1'],cards:[],statuses:{},transactions:[{id:'previous',kind:'purchase',title:'Previous records',amount:12,date:'2026-11-17'}]};
+  await evaluate('localStorage.setItem("pokeledger-v1",'+JSON.stringify(JSON.stringify(previous))+')');
   await evaluate('LedgerUI.begin()');
+  assert.deepEqual(JSON.parse(await evaluate('localStorage.getItem("pokeledger-v1")')),previous);
   assert.deepEqual(await evaluate('db.members'),['Me','Maz','Lalie']);
   await evaluate(`LedgerUI.openReceipt();const f=document.getElementById("ledger-receipt-form");f.elements.amount.value="100";f.elements.title.value="Sample shared purchase";f.elements.recipient.value="split";LedgerUI.recipient("split");const amounts=[20,25,15,40];[...f.querySelectorAll("[data-split-owner]")].forEach((el,i)=>el.value=amounts[i]);LedgerUI.submitReceipt(f)`);
   assert.equal(await evaluate('metrics().spent'),100);
   assert.equal(await evaluate('metrics().hobbySpent'),60);
   assert.equal(await evaluate('metrics().resaleSpent'),40);
+  await evaluate('window.prompt=()=>"Maz saved";LedgerUI.renameProfile("Maz")');
   await send('Page.reload');
   await waitFor('typeof db!=="undefined" && db.transactions.length===1');
-  assert.deepEqual(await evaluate('db.members'),['Me','Maz','Lalie']);
+  assert.deepEqual(await evaluate('db.members'),['Me','Maz saved','Lalie']);
+  assert.equal(await evaluate('db.transactions[0].allocations[1].owner'),'Maz saved');
+  await evaluate('window.prompt=()=>"Maz";LedgerUI.renameProfile("Maz saved")');
   for(const width of [320,390,430]){
     await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:2,mobile:true});
     for(const section of ['dashboard','spending','sales','settings']){
