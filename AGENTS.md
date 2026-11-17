@@ -1,12 +1,13 @@
 # PokéLedger — Development Working Agreement
 
-This is the existing personal-use PokéLedger PWA. The original site and data model are authoritative. Read `.gitos/handoff.md`, `.gitos/INDEX.md`, `.gitos/brain/BRAIN.md`, and relevant decisions before making changes.
+This is the existing personal-use PokéLedger PWA, now focused on spending for Me, Maz, Lalie and resale after the explicit user redesign in ADR-005. The original site and data model are authoritative. Read `.gitos/handoff.md`, `.gitos/INDEX.md`, `.gitos/brain/BRAIN.md`, and relevant decisions before making changes.
 
 **Gitos provenance:** This project adapts the transferable engineering principles of [wizzo-gmb/gitos](https://github.com/wizzo-gmb/gitos), MIT license, Copyright © 2026 Wizzo. Its Claude Code skill, hooks, worktree scripts, agents, and System One runtime are NOT installed or automatically executed by this repository. The written roles below are workflow responsibilities, not claims of running autonomous agents.
 
 ## Scope and invariants
 - Same app, same GitHub Pages URL, same local data. No replacement product or paid services.
-- Preserve localStorage `pokeledger-v1`, JSON backups/restores, card IDs, family data, owned inventory, itemized hauls, realized sales P/L, saved market values, optional cloud synchronization.
+- Preserve the old localStorage `pokeledger-v1` as a recoverable backup. Active spending records use `pokeledger-spending-v1`. A user-triggered first launch downloads the old backup and starts the new ledger. Preserve JSON restores, family allocations, itemized cost basis, actual sale P/L and optional isolated cloud synchronization.
+- Active navigation is Home, History, Resale and Settings. Gallery, scanner, slab and restock source is historical; do not restore those interfaces unless requested. Receipt allocations must equal the parent total in cents, and purchases count once.
 - Realized P/L comes only from completed sales with actual costs and fees. Paper gains are separate. Stale or missing price feeds must not become verified valuations.
 - A slab certification number cannot establish physical authenticity; a restock report cannot certify stock at checkout.
 - No tokens/secrets, personal inventory exports, analytics tracking, endless polling, or heavy background jobs committed to this public repository.
