@@ -11,6 +11,8 @@
 
 - [WO-009](work-orders/WO-009.md) — Improve recognition of stylized names, promo numbers, lookup failures and scanner cancellation.
 
+- [WO-010](work-orders/WO-010.md) — Spending-first redesign, Me/Maz/Lalie, exact receipt splits and a fresh ledger with backup.
+
 ## Next (scoped proposals — not yet implemented)
 - WO-002 — Measure 500-card/1,000-transaction real-device performance, then optimize observed bottlenecks.
 - WO-003 — Audit and test data import/export + cloud conflict handling with known-answer fixtures.

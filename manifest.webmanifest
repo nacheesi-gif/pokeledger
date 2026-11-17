@@ -1,11 +1,11 @@
 {
-  "name": "PokéLedger — Pokémon Collection & Spending",
+  "name": "PokéLedger — Spending & Resale",
   "short_name": "PokéLedger",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f6f9ff",
-  "theme_color": "#2967c6",
+  "background_color": "#fff0d8",
+  "theme_color": "#fff0d8",
   "icons": [
     {
       "src": "icon.svg",
