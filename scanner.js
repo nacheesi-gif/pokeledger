@@ -74,7 +74,7 @@ function printMatches(list,meta){
  const host=document.getElementById("psc-results");if(!host)return;
  if(!list.length){host.innerHTML='<div class="psc-placeholder">No confident matches. Try entering the card name in the search box, then choose the correct set and number.</div>';return}
  const hint=meta?'<p class="psc-tip">Detected: '+E(meta)+' · verify the card number and variant</p>':"";
- host.innerHTML=hint+'<div class="psc-matches">'+list.slice(0,12).map(c=>'<article class="psc-item"><img src="'+E(c.image?c.image+"/low.webp":"")+'" loading="lazy" alt="'+E(c.name)+'" onerror="this.style.visibility=\'hidden\'"><div><b>'+E(c.name)+'</b><small>'+E(c.id)+' · #'+E(c.localId||"")+'</small><div class="psc-actions"><button class="btn primary sm" onclick="pscAdd(\''+E(c.id)+'\')">✓ Add owned</button><button class="btn sm" onclick="pmOpen(\''+E(c.id)+'\',\''+E(c.name).replace(/'/g,"&#39;")+'\')">Value / sources</button></div></div></article>').join("")+'</div>';
+ host.innerHTML=hint+'<div class="psc-matches">'+list.slice(0,12).map(c=>'<article class="psc-item"><img src="'+E(c.image?c.image+"/low.webp":"")+'" loading="lazy" alt="'+E(c.name)+'" onerror="this.style.visibility=\'hidden\'"><div><b>'+E(c.name)+'</b><small>'+E(c.id)+' · #'+E(c.localId||"")+'</small><div class="psc-actions"><button class="btn primary sm" onclick="pscAdd(\''+E(c.id)+'\')">✓ Add owned</button><button class="btn sm" onclick="pmOpen(\''+E(c.id)+'\')"Value / sources</button></div></div></article>').join("")+'</div>';
 }
 async function search(raw){
  if(S.scanning)return;
