@@ -1,5 +1,7 @@
 # Universal Development Discipline — Gitos-informed
 
+The original upstream Gitos discipline rules are vendored in `.gitos/upstream/engineering-disciplines.md`, pinned to commit `ecd2f52a00072fadb70621b2277480666ef0a61c` under its MIT license. Only vetted, project-appropriate hooks are active.
+
 This is the reusable operating agreement for **any software project** (new or existing).
 
 ## What I expect from a development assistant
