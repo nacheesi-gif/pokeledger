@@ -71,3 +71,25 @@ In **Explore Sets**, selecting a category containing multiple subsets—such as 
 The **Restock Watch** tab keeps Pokémon restock-report sources, prioritized sets (Ascended Heroes, Prismatic Evolutions, Paldean Fates, Paldea Evolved), preferred retailers (Target, Walmart, Costco, Pokémon Center, Best Buy, Amazon, and optional others), and custom product searches together. Preferences persist with local PokéLedger data and JSON backups. Source shortcuts open public RestockR reports, PokeRestock's delayed public alerts, Restockd updates, and the Los Angeles-area in-store restock history.
 
 **Accuracy boundary:** This release links to authoritative third-party public reports; it does not automatically ingest them as an in-app feed, monitor inventories in the background, send push notifications, or verify stock at an individual store. Third-party reports can be delayed and do not confirm live checkout availability. Retailer pages remain the source of truth. No paid integrations or credentials required.
+
+## Universal engineering discipline (Gitos-informed)
+
+PokéLedger now includes portable, **project-scoped** development instructions and verification gates derived from [Gitos](https://github.com/wizzo-gmb/gitos) (MIT © 2026 Wizzo). The original Claude Code engine itself is not installed in ChatGPT.
+
+- `AGENTS.md` is the canonical project policy for AI coding assistants; `UNIVERSAL_DEVELOPMENT_DISCIPLINE.md` contains the reusable version for any future repo.
+- `.agents/skills/gitos-discipline/SKILL.md` is the portable, inspectable skill guidance.
+- `CLAUDE.md` plus `.claude/settings.json` declare an optional **Claude Code project-scoped** SessionStart hook. In that environment, the hook runs `scripts/discipline_session.py`; it does not run in ChatGPT or on a reader's phone.
+- `.githooks/pre-commit` is an optional **local** commit check; each developer clone must explicitly activate it with `git config core.hooksPath .githooks`. It is not an account-wide Git hook.
+- `.github/workflows/verify.yml` is the **active GitHub-level gate**: on push/PR it checks the development contract, parses the production scripts and runs positive and negative behavioral tests. It needs no secrets or paid services.
+
+The browser app does not load the skill, hooks, or knowledge files; therefore they add **zero runtime CPU, network usage, or battery drain**. The existing `pokeledger-v1` data and JSON backup format are preserved.
+
+### Repeatable checks
+
+```bash
+npm run check
+npm test
+python3 scripts/discipline_check.py
+```
+
+The discipline does not automatically propagate to arbitrary ChatGPT chats. For future ChatGPT work, use the compact text in `UNIVERSAL_DEVELOPMENT_DISCIPLINE.md` as a personal Custom Instruction or ask the assistant to load that canonical GitHub document.
