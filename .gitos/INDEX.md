@@ -33,3 +33,5 @@
 - Installing Gitos's entire Claude Code runtime into the PWA: not applicable; it is a development-time tool, not a browser component.
 
 - [WO-011](work-orders/WO-011.md) — Charizard for the Me profile, retaining other sprites and saved records.
+
+- [WO-012](work-orders/WO-012.md) — Custom purchase-type field and saved-entry visual walkthrough.
