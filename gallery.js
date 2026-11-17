@@ -5,14 +5,24 @@ const cache=new Map(),work=new Set();
 let observer=null,rootObserver=null,pool=0;const queue=[];
 const valid=id=>/^[\w.+-]+$/.test(String(id||""));
 function money(x){return "$"+Number(x).toFixed(2)}
+function timestamp(value){
+ if(value===null||value===undefined||value==="")return null;
+ const n=Number(value),d=Number.isFinite(n)&&n>0?new Date(n*(n>1e11?1:1000)):new Date(value);
+ return Number.isFinite(d.getTime())?d:null;
+}
+function ageDays(value){const d=timestamp(value);return d?Math.max(0,(Date.now()-d.getTime())/86400000):Infinity}
 function sources(item){
  const t=item?.pricing?.tcgplayer||{};
- const rawTime=t.updated;let stamp="date unavailable";if(rawTime){const time=typeof rawTime==="number"?new Date(rawTime*(rawTime>1e11?1:1000)):new Date(rawTime);if(Number.isFinite(time.getTime()))stamp="as of "+time.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}
+ const last=timestamp(t.updated),stale=ageDays(t.updated)>7;
+ const stamp=last?"as of "+last.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"date unavailable";
  const variants=Object.entries(t).filter(([key,v])=>v&&typeof v==="object"&&typeof v.marketPrice==="number"&&Number.isFinite(v.marketPrice)&&v.marketPrice>=0).map(([key,v])=>({variant:key,price:v.marketPrice}));
- if(!variants.length)return {label:"Price N/A",title:"No TCGplayer raw market snapshot for this printing.",price:null,variant:null};
- if(variants.length===1)return {label:money(variants[0].price),title:"Raw TCGplayer market snapshot · "+variants[0].variant+" · "+stamp+" · verify exact finish",price:variants[0].price,variant:variants[0].variant};
+ if(!variants.length)return {label:"Check price ↗",title:"No usable TCGplayer quote in this feed. Tap to open marketplace verification links.",price:null,variant:null,stale:false};
  const min=Math.min(...variants.map(v=>v.price));
- return {label:"From "+money(min),title:"Raw TCGplayer market estimates vary by finish · "+stamp+". Lowest listed variant; open details to choose the correct one.",price:null,variant:"multiple"};
+ const multiple=variants.length>1;
+ const prefix=stale?"Old ":"";
+ const label=prefix+(multiple?"From ":"")+money(multiple?min:variants[0].price);
+ const title="TCGplayer via TCGdex · "+stamp+(stale?" · historical / may be stale":" · recent snapshot")+" · "+(multiple?"multiple finishes; check correct variant":variants[0].variant);
+ return {label,title,price:!multiple&&!stale?variants[0].price:null,variant:multiple?"multiple":variants[0].variant,stale,updated:last?.toISOString()||null};
 }
 async function load(id){
  if(!valid(id))throw Error("Invalid card ID");
@@ -23,20 +33,27 @@ async function load(id){
 }
 function badge(id,owned){
  const st=owned&&typeof db!=="undefined"?db.statuses?.[owned]:null;
- if(st&&st.marketUnitValue!==null&&st.marketUnitValue!==undefined&&st.marketUnitValue!==""&&Number.isFinite(Number(st.marketUnitValue)))return '<span class="pk-price-badge pk-own-price" title="Your saved per-card market value ${E(st.marketAsOf||"date not provided")} · verify finish">'+money(st.marketUnitValue)+' <small>saved</small></span>';
- if(!id||!valid(id))return '<span class="pk-price-badge pk-no-price">Value N/A</span>';
- return '<span class="pk-price-badge pk-live-price" data-pkprice="'+E(id)+'" title="Market value fetching">Checking value…</span>';
+ if(st&&st.marketUnitValue!==null&&st.marketUnitValue!==undefined&&st.marketUnitValue!==""&&Number.isFinite(Number(st.marketUnitValue))){
+   const when=st.marketAsOf||"date not provided";
+   return '<span class="pk-price-badge pk-own-price" title="Your saved per-card market value · '+E(when)+' · verify condition and finish">'+money(st.marketUnitValue)+' <small>saved</small></span>';
+ }
+ if(!id||!valid(id))return '<span class="pk-price-badge pk-no-price">Price unlisted</span>';
+ return '<button type="button" class="pk-price-badge pk-live-price" data-pkprice="'+E(id)+'" onclick="pmOpen(\''+E(id)+'\')" title="Check latest market prices and source links">Checking value…</button>';
 }
 async function apply(el,id){
  if(!el.isConnected||el.dataset.done)return;
  el.dataset.done="yes";
- try{const d=await load(id),quote=sources(d);if(!el.isConnected)return;
- el.textContent=quote.label;
- el.title=quote.title;
- if(quote.price!==null){el.classList.add("pk-has-price");}
- else if(quote.variant==="multiple")el.classList.add("pk-has-price");
- else el.classList.add("pk-no-price");
- }catch{if(el.isConnected){el.textContent="Value N/A";el.title="Live raw pricing could not be retrieved";el.classList.add("pk-no-price")}}
+ try{
+   const d=await load(id),quote=sources(d);
+   if(!el.isConnected)return;
+   el.textContent=quote.label;
+   el.title=quote.title;
+   if(quote.stale)el.classList.add("pk-old-price");
+   else if(quote.price!==null||quote.variant==="multiple")el.classList.add("pk-has-price");
+   else el.classList.add("pk-no-price");
+ }catch{
+   if(el.isConnected){el.textContent="Check price ↗";el.title="Market quote unavailable. Open direct marketplace links to verify.";el.classList.add("pk-no-price")}
+ }
 }
 function drain(){while(pool<4&&queue.length){const [el,id]=queue.shift();if(!el.isConnected)continue;pool++;apply(el,id).finally(()=>{pool--;drain()})}}
 function enqueue(el){if(el.dataset.queued)return;el.dataset.queued="yes";queue.push([el,el.getAttribute("data-pkprice")]);drain()}
@@ -84,7 +101,7 @@ async function zoom(id,origin){
  if(rawid){try{const obj=await load(rawid),info=sources(obj);let label=holder.querySelector("#pk-zoom-quote");if(label)label.innerHTML='<b>'+E(info.label)+'</b><small>'+E(info.title)+'</small>'}catch{const el=holder.querySelector("#pk-zoom-quote");if(el)el.textContent="Market value unavailable"}}
  else holder.querySelector("#pk-zoom-quote").textContent="Market value unavailable";
 }
-const css='<style id="pk-gallery-view">.pk-price-badge{display:inline-flex;align-items:center;gap:3px;border-radius:8px;font-size:11px;line-height:1.25;padding:6px 7px;background:#edf3fb;border:1px solid #d3e1f2;color:#486b91;font-weight:850;margin:4px 0}.pk-price-badge small{font-size:9px}.pk-has-price,.pk-own-price{background:#e6f5ea;border-color:#b4dac7;color:#117047}.pk-no-price{color:#62738b;background:#f2f4f8}.pk-card-tap{display:block;width:100%;border:0;background:none;cursor:zoom-in;padding:0;text-align:inherit}.pk-card-tap img{transition:transform .15s ease}.pk-card-tap:hover img{transform:scale(1.025)}.pk-zoom{position:fixed;inset:0;z-index:200;background:rgba(12,26,48,.92);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}.pk-zoom-dialog{max-width:900px;width:100%;background:#fff;border-radius:20px;padding:18px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(220px,.7fr);gap:17px;position:relative;max-height:95vh;overflow:auto}.pk-zoom-close{position:absolute;right:12px;top:8px;border:none;background:#eaf1fb;border-radius:50%;font-size:25px;width:39px;height:39px;cursor:pointer;z-index:1}.pk-zoom-visual{display:flex;align-items:center;justify-content:center;min-width:0}.pk-zoom-image{width:auto;max-width:100%;max-height:84vh;object-fit:contain}.pk-zoom-info{align-self:center;padding:24px 4px}.pk-zoom-info h2{font-size:23px}.pk-zoom-info p,.pk-zoom-info small{color:#6d7d92;font-size:12px}.pk-zoom-info #pk-zoom-quote b{display:block;font-size:25px;color:#17663f;margin:14px 0 3px}.pk-zoom-info #pk-zoom-quote small{display:block}.pk-zoom-actions{display:flex;flex-wrap:wrap;gap:8px;margin:17px 0}@media(max-width:600px){.pk-zoom-dialog{grid-template-columns:1fr;padding:13px;gap:4px}.pk-zoom-image{max-height:64vh}.pk-zoom-info{padding:3px 10px}.pk-zoom-info h2{font-size:18px}.pk-zoom-info #pk-zoom-quote b{font-size:20px}}</style>';
+const css='<style id="pk-gallery-view">.pk-price-badge{display:inline-flex;align-items:center;gap:3px;border-radius:8px;font-size:11px;line-height:1.25;padding:6px 7px;background:#edf3fb;border:1px solid #d3e1f2;color:#486b91;font-weight:850;margin:4px 0}.pk-price-badge small{font-size:9px}.pk-has-price,.pk-own-price{background:#e6f5ea;border-color:#b4dac7;color:#117047}.pk-no-price{color:#62738b;background:#f2f4f8}.pk-old-price{color:#85611c;background:#fff2d9;border-color:#e6d2a8}.pk-live-price{cursor:pointer;font-family:inherit}.pk-card-tap{display:block;width:100%;border:0;background:none;cursor:zoom-in;padding:0;text-align:inherit}.pk-card-tap img{transition:transform .15s ease}.pk-card-tap:hover img{transform:scale(1.025)}.pk-zoom{position:fixed;inset:0;z-index:200;background:rgba(12,26,48,.92);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}.pk-zoom-dialog{max-width:900px;width:100%;background:#fff;border-radius:20px;padding:18px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(220px,.7fr);gap:17px;position:relative;max-height:95vh;overflow:auto}.pk-zoom-close{position:absolute;right:12px;top:8px;border:none;background:#eaf1fb;border-radius:50%;font-size:25px;width:39px;height:39px;cursor:pointer;z-index:1}.pk-zoom-visual{display:flex;align-items:center;justify-content:center;min-width:0}.pk-zoom-image{width:auto;max-width:100%;max-height:84vh;object-fit:contain}.pk-zoom-info{align-self:center;padding:24px 4px}.pk-zoom-info h2{font-size:23px}.pk-zoom-info p,.pk-zoom-info small{color:#6d7d92;font-size:12px}.pk-zoom-info #pk-zoom-quote b{display:block;font-size:25px;color:#17663f;margin:14px 0 3px}.pk-zoom-info #pk-zoom-quote small{display:block}.pk-zoom-actions{display:flex;flex-wrap:wrap;gap:8px;margin:17px 0}@media(max-width:600px){.pk-zoom-dialog{grid-template-columns:1fr;padding:13px;gap:4px}.pk-zoom-image{max-height:64vh}.pk-zoom-info{padding:3px 10px}.pk-zoom-info h2{font-size:18px}.pk-zoom-info #pk-zoom-quote b{font-size:20px}}</style>';
 document.head.insertAdjacentHTML("beforeend",css);
 window.PokeGallery={badge,zoom,load,sources,observePrices,close};
 window.pkZoom=zoom;
