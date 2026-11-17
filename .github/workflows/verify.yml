@@ -1,0 +1,26 @@
+name: Verify PokéLedger
+
+on:
+  push:
+    branches: [main, gitos-discipline-audit]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check development discipline and hook contracts
+        run: python3 scripts/discipline_check.py
+      - name: Check scripts and PWA wiring
+        run: npm run check
+      - name: Behavioral regressions
+        run: npm test
