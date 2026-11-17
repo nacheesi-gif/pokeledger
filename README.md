@@ -57,3 +57,7 @@ The repository/source and website are public. **Your personal collection and fin
 - It provides eBay *completed/sold* searches and PriceCharting graded comparisons. A graded-market estimate is user entered, not invented or silently substituted from a raw quote.
 - Slab verification statuses are **Not verified**, **Official cert record manually matched**, and **Discrepancy reported**. Green means the user checked the official cert details, **not** that the physical slab is guaranteed genuine, unaltered, or unflagged. Some physical authentication needs company-specific tools or an expert.
 - Slab checks are saved in the same local JSON backup, separate from owned inventory, to avoid double-counting a slab that is already recorded as an owned card.
+
+## All Cards (combined gallery)
+
+Explore Sets now also includes **View All Cards**, a combined browsing grid that searches every expansion, Trainer Gallery, Galarian Gallery, promo, and other English TCGdex cards without opening each set individually. Existing category filters and individual set checklists remain available. The combined view loads 48 cards at a time, supports full-catalog name search and **Show More Cards**, displays raw market badges where available, supports enlarged artwork, and lets you add cards directly to My Binder. The combined view reflects published TCGdex data and may not include every regional/Japanese-only printing.
