@@ -17,19 +17,20 @@ function makeLinks(card){
  return searches.map(([label,url])=>'<a class="pm-source" href="'+E(url)+'" target="_blank" rel="noopener noreferrer">'+E(label)+' ↗</a>').join("");
 }
 function bestPrices(card){
- const t=card.pricing?.tcgplayer;
- if(!t)return "<div class='pm-muted'>TCGplayer quote unavailable from this feed. Use the marketplace links below to check current values.</div>";
- const variants=Object.entries(t).filter(([key,val])=>val&&typeof val==="object"&&typeof val.marketPrice==="number"&&Number.isFinite(val.marketPrice)&&!Array.isArray(val));
- const raw=t.updated,number=Number(raw),dateObj=raw?Number.isFinite(number)&&number>0?new Date(number*(number>1e11?1:1000)):new Date(raw):null;
- const validDate=dateObj&&Number.isFinite(dateObj.getTime()),date=validDate?dateObj.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"not provided";
- const stale=!validDate||(Date.now()-dateObj.getTime())>7*86400000;
- const lines=variants.map(([name,values])=>'<div class="pm-price"><span><b>'+E(name.replaceAll("-"," "))+'</b><small>'+(stale?"Historical / unverified quote":"Recent market snapshot")+'</small></span><strong>'+usd(values.marketPrice)+'</strong></div>').join("");
- return '<p class="pm-muted">TCGplayer via TCGdex · Quote date '+E(date)+' · currency '+E(t.unit||"USD")+'</p>'+(stale?'<p class="pm-warning">This feed is outdated or missing a reliable timestamp. Do not treat these values as current. Verify on TCGplayer or eBay before valuing your collection.</p>':'')+(lines||"<p>No market-price variants available. Verify directly using the links below.</p>")+'<p class="pm-muted">Snapshots are not independently verified completed sales. Review sold listings and confirm the card variant.</p>';
+ const quote=window.PokeGallery.sources(card);
+ const rows=quote.variants.map(({variant,price,productId})=>{
+   const link=Number.isSafeInteger(productId)&&productId>0
+     ? '<a class="pm-source" target="_blank" rel="noopener noreferrer" href="https://www.tcgplayer.com/product/'+productId+'">Price Points ↗</a>' : "";
+   return '<div class="pm-price"><span><b>'+E(variant.replaceAll("-"," "))+'</b><small>'+link+'</small></span><strong>'+usd(price)+'</strong></div>';
+ }).join("");
+ return '<p class="pm-muted">'+E(quote.title)+'. The feed identifies the finish. Check Price Points for your card’s condition.</p>'+
+   (rows && quote.stale?'<p class="pm-warning">Historical snapshot · verify the current price.</p>':'')+
+   (rows||'<p>Market Price unavailable for this card.</p>');
 }
 function render(card){
  const img=card.image?'<img src="'+E(card.image.replace(/\/(low|high)\.(png|webp)$/i,"")+"/low.webp")+'" alt="'+E(card.name)+'" class="pm-picture">':"";
  const artwork=card.illustrator?'<p class="pm-muted">Illustrator: '+E(card.illustrator)+'</p>':"";
- return '<div class="pm-cardhead">'+img+'<div><b>'+E(card.name)+'</b><p>'+E(card.set?.name||"Set unknown")+' · '+E(card.localId||"")+'</p><p>'+E(card.rarity||"Rarity unavailable")+'</p>'+artwork+'</div></div><h3>Raw / ungraded market prices</h3>'+bestPrices(card)+'<h3>Verify original sources</h3><div class="pm-links">'+makeLinks(card)+'</div><p class="pm-muted"><b>PSA 9 / PSA 10:</b> Prices are not automatically supplied by the raw TCGdex feed. Check the graded sold listings and confirm the exact card, grade, and variant.</p>';
+ return '<div class="pm-cardhead">'+img+'<div><b>'+E(card.name)+'</b><p>'+E(card.set?.name||"Set unknown")+' · '+E(card.localId||"")+'</p><p>'+E(card.rarity||"Rarity unavailable")+'</p>'+artwork+'</div></div><h3>TCGplayer Market Price · USD</h3>'+bestPrices(card)+'<h3>Verify original sources</h3><div class="pm-links">'+makeLinks(card)+'</div><p class="pm-muted"><b>PSA 9 / PSA 10:</b> Prices are not automatically supplied by the raw TCGdex feed. Check the graded sold listings and confirm the exact card, grade, and variant.</p>';
 }
 function skeleton(name){return '<h2>Card market & sold listings</h2><p class="pm-muted">'+E(name||"Loading card")+'</p><div id="pm-body">Retrieving pricing and sources…</div><div class="modalFoot"><button class="btn" onclick="closeModal()">Close</button></div>'}
 async function load(id){

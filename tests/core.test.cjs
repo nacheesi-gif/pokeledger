@@ -15,27 +15,27 @@ function galleryHarness(){
 }
 test("price gate: recent single variant is accepted and dated",()=>{
  const {gallery}=galleryHarness();
- const x=gallery.sources({pricing:{tcgplayer:{updated:new Date().toISOString(),normal:{marketPrice:25}}}});
- assert.equal(x.label,"$25.00");assert.equal(x.stale,false);assert.equal(x.price,25);
+ const x=gallery.sources({pricing:{tcgplayer:{updated:new Date().toISOString(),holofoil:{marketPrice:2.79,mostRecentSale:2.50,midPrice:4}}}});
+ assert.equal(x.label,"TCGplayer Market Price · holofoil $2.79");assert.equal(x.stale,false);assert.equal(x.price,2.79);
 });
 test("price gate: stale and absent quotes are not current prices",()=>{
  const {gallery}=galleryHarness();
  const old=gallery.sources({pricing:{tcgplayer:{updated:"2020-01-01T00:00:00Z",normal:{marketPrice:500}}}});
  const missing=gallery.sources({});
  assert.equal(old.stale,true);assert.equal(old.price,null);
- assert.match(old.label,/Old/);
- assert.equal(missing.price,null);assert.match(missing.label,/Check price/);
+ assert.match(old.label,/Historical/);
+ assert.equal(missing.price,null);assert.match(missing.label,/unavailable/);
 });
-test("price gate: ambiguous finishes show lowest FROM estimate rather than one authoritative variant",()=>{
+test("price gate: multiple finishes display separate Market Prices",()=>{
  const {gallery}=galleryHarness();
  const d=gallery.sources({pricing:{tcgplayer:{updated:new Date().toISOString(),normal:{marketPrice:12},holofoil:{marketPrice:19}}}});
- assert.equal(d.label,"From $12.00");assert.equal(d.price,null);
+ assert.equal(d.label,"TCGplayer Market Price · normal $12.00 · holofoil $19.00");assert.equal(d.price,null);
 });
 test("saved binder market value remains explicitly labeled as saved",()=>{
  const {gallery,db}=galleryHarness();db.statuses.owned={marketUnitValue:17.5,marketAsOf:"2026-11-01"};
  assert.match(gallery.badge("sv01-1","owned"),/17\.50/);
  assert.match(gallery.badge("sv01-1","owned"),/saved/);
- assert.doesNotMatch(gallery.badge("sv01-1","owned"),/data-pkprice/);
+ assert.match(gallery.badge("sv01-1","owned"),/data-pkprice/);
 });
 test("dashboard realized profit excludes unrealized cards and unknown-cost sales",()=>{
  const html=read("index.html");
@@ -102,4 +102,11 @@ test("all cards loads pages with a bounded set-catalog lookup and adds owned cop
 test("negative all-cards case: unknown card cannot modify owned inventory",async()=>{
  const h=allHarness();h.api.open();await flush();await h.api.add("not-a-card");
  assert.equal(h.db.cards.length,0);assert.equal(h.getSaved(),0);
+});
+
+test("catalog resolves Trainer Gallery printing and skips unmapped custom cards",()=>{
+ const {gallery}=galleryHarness();
+ assert.equal(gallery.catalogID({image:"https://images.pokemontcg.io/swsh9tg/TG01.png"}),"swsh9tg-TG01");
+ assert.equal(gallery.catalogID({id:"custom-1"}),"");
+ assert.equal(gallery.sources({pricing:{tcgplayer:{unit:"EUR",normal:{marketPrice:20}}}}).variants.length,0);
 });

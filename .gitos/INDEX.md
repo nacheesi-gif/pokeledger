@@ -1,7 +1,11 @@
 # PokéLedger · Work Order Ledger
 
 ## Active
-- WO-001 — Discipline adoption and automated regression foundations. Status: VERIFIED (18/18 behavioral tests, project-scoped hooks, CI). Integration to original `main` pending.
+- WO-001 — Discipline adoption and automated regression foundations. Status: VERIFIED (18/18 behavioral tests, project-scoped hooks, CI). Integrated into the original `main`.
+
+- [WO-006](work-orders/WO-006.md) — Phone launch, raster icons, offline shell, camera lifecycle and restore checks. Mobile Chromium regression runs in Actions. Physical device acceptance remains open.
+
+- [WO-007](work-orders/WO-007.md) — Display TCGplayer Market Price per finish, alongside saved values.
 
 ## Next (scoped proposals — not yet implemented)
 - WO-002 — Measure 500-card/1,000-transaction real-device performance, then optimize observed bottlenecks.

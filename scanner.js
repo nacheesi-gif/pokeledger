@@ -13,14 +13,28 @@ return '<header class="psc-head"><div><span class="psc-tag">POKÉLEDGER · RAPID
 '<div class="psc-disclaimer">This is an OCR-based scanner, not artwork-based visual identification. Similar printings can look alike. Always verify the set, collector number, and variant. Camera needs HTTPS and permission; internet is required for the recognition library and card lookups.</div>';
 }
 function render(){return '<div id="psc-root">'+photoHTML()+'</div>'}
-function stop(){S.auto=false;S.token++;if(S.timer)clearTimeout(S.timer);S.timer=null;if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null}const video=document.getElementById("psc-video");if(video){video.pause();video.srcObject=null;}const auto=document.getElementById("psc-auto");if(auto)auto.textContent="Auto: OFF";}
+let cameraRequest=0;
+function stop(){cameraRequest++;S.auto=false;S.token++;if(S.timer)clearTimeout(S.timer);S.timer=null;if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null}const video=document.getElementById("psc-video");if(video){video.pause();video.srcObject=null;}const auto=document.getElementById("psc-auto");if(auto)auto.textContent="Auto: OFF";}
 async function start(){
- if(!navigator.mediaDevices?.getUserMedia){state("Camera access is unavailable. Please open the HTTPS site in a supported browser, or upload a photo.","error");return}
- stop();try{
- const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:960}}});
- if(document.hidden||page!=="scanner"){stream.getTracks().forEach(t=>t.stop());return}S.stream=stream;const video=document.getElementById("psc-video");if(!video){stream.getTracks().forEach(t=>t.stop());return}
- video.srcObject=stream;await video.play();state("Camera ready. Position one card and tap Read card.");
- }catch(e){state("Camera couldn't start: "+e.message+" . You can upload a card photo instead.","error")}
+ if(!navigator.mediaDevices?.getUserMedia)return state("Camera unavailable. Upload a photo instead.");
+ stop();
+ const request=cameraRequest;
+ try{
+  const acquired=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:960}}});
+  const video=document.getElementById("psc-video");
+  if(request!==cameraRequest || document.hidden || !video){
+   acquired.getTracks().forEach(track=>track.stop());
+   return;
+  }
+  S.stream=acquired;
+  video.srcObject=acquired;
+  await video.play();
+  if(request===cameraRequest)state("Camera ready. "+"Position one card and tap Read card.");
+ }catch(error){
+  if(request!==cameraRequest)return;
+  stop();
+  state("Camera could not start. Upload a photo or retry. "+error.message);
+ }
 }
 function makeFrame(){
  const video=document.getElementById("psc-video");if(!video||!S.stream||!video.videoWidth)throw Error("Start the camera and allow it to focus on the card.");
@@ -74,10 +88,10 @@ async function loadCandidatePrices(candidates){
   if(!document.getElementById("psc-price-"+c.id))return;
   try{
    const item=await window.PokeMarket?.load?.(c.id);
-   const price=Object.values(item?.pricing?.tcgplayer||{}).find(v=>v&&typeof v==="object"&&typeof v.marketPrice==="number");
+   const quote=window.PokeGallery.sources(item);
    const element=document.getElementById("psc-price-"+c.id);
-   if(element)element.textContent=price?"Raw market: $"+price.marketPrice.toFixed(2)+" · verify source":"Raw market: unavailable";
-  }catch{const element=document.getElementById("psc-price-"+c.id);if(element)element.textContent="Raw market: unavailable"}
+   if(element){element.textContent=quote.label;element.title=quote.title}
+  }catch{const element=document.getElementById("psc-price-"+c.id);if(element)element.textContent="TCGplayer Market Price unavailable"}
  }));
 }
 function printMatches(list,meta){
@@ -150,7 +164,8 @@ async function add(id){
 }
 const style='<style id="psc-style">.psc-head{border:1px solid #d8e6f9;background:#fff;border-radius:18px;padding:20px;margin:0 0 14px}.psc-tag{font-size:10px;font-weight:900;color:#2366bf;letter-spacing:1.3px}.psc-head h1{font-size:25px}.psc-head p{color:#71839e;font-size:13px}.psc-layout{display:grid;grid-template-columns:1.07fr 1fr;gap:14px}.psc-camera,.psc-results{background:#fff;border:1px solid #deebf8;border-radius:17px;padding:14px;min-width:0}.psc-camera{position:relative}.psc-camera video{display:block;background:#142845;width:100%;aspect-ratio:4/3;object-fit:contain;border-radius:12px}.psc-guides{position:absolute;top:45px;left:10%;right:10%;pointer-events:none;text-align:center}.psc-guides span{color:#fff;background:#143760ae;padding:4px;border-radius:7px;font-size:11px}.psc-guidebox{margin:12px auto;width:58%;aspect-ratio:.714;border:2px dashed #fae17c;border-radius:9px;box-shadow:0 0 0 1px #1c304e}.psc-actions{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.psc-actions button{font-size:12px;padding:9px}.psc-upload{display:block;margin:6px 0;padding:12px;background:#f2f7ff;border:1px solid #cfe0f7;border-radius:11px;font-weight:700;cursor:pointer}.psc-upload input{display:block;font-size:12px;margin-top:7px;max-width:100%}.psc-state{font-size:13px;color:#1b5e9c;padding:12px;background:#ecf5ff;border-radius:10px;min-height:46px}.psc-state[data-kind="error"]{color:#a4333b;background:#fff2f2}.psc-state[data-kind="ok"]{color:#176943;background:#e8f7ee}.psc-tip,.psc-disclaimer{font-size:11px;color:#72839b;margin:12px 0}.psc-disclaimer{padding:12px}.psc-choice{display:grid;grid-template-columns:1fr 1fr;gap:9px}.psc-choice label,.psc-results label{display:block;font-size:12px;font-weight:750;margin:8px 0}.psc-choice select{margin-top:4px}.psc-matches{display:grid;gap:8px;max-height:660px;overflow:auto}.psc-item{display:flex;gap:10px;background:#f9fbff;border:1px solid #e4edf9;border-radius:13px;padding:10px}.psc-item img{width:78px;min-width:78px;height:110px;object-fit:contain}.psc-item b{display:block;font-size:14px}.psc-item small{display:block;color:#7486a0;font-size:10px;overflow-wrap:anywhere}.psc-price{font-size:11px;font-weight:750;color:#2465ab;margin-top:5px}.psc-placeholder{border:1px dashed #cbddee;border-radius:12px;color:#637894;text-align:center;padding:25px;font-size:12px}@media(max-width:750px){.psc-layout{grid-template-columns:1fr}.psc-camera video{aspect-ratio:4/3}.psc-guides{top:42px}}</style>';
 document.head.insertAdjacentHTML("beforeend",style);
-document.addEventListener("visibilitychange",()=>{if(document.hidden&&S.stream)stop()});
+window.addEventListener("pagehide",stop);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)stop()});
 window.PokeScanner={render,start,capture,auto,stop,upload,search:manual,clear,add,card:id=>S.candidates.find(c=>c.id===id)};
 window.pscStart=start;window.pscCapture=capture;window.pscAuto=auto;window.pscStop=()=>{stop();state("Camera stopped.")};window.pscUpload=upload;window.pscSearch=manual;window.pscClear=clear;window.pscAdd=add;
 })();

@@ -1,30 +1,31 @@
-const CACHE='pokeledger-performance-v17';const SHELL=['./','./index.html','./explore.js','./market.js','./scanner.js','./collections.js','./hauls.js','./gallery.js','./slabs.js','./allcards.js','./restocks.js','./manifest.webmanifest','./icon.svg'];self.addEventListener('install',event=>{
- event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)));
- self.skipWaiting();
+const CACHE='pokeledger-performance-v19';
+const SHELL=['./','./index.html','./explore.js','./market.js','./scanner.js','./collections.js','./hauls.js','./gallery.js','./slabs.js','./allcards.js','./restocks.js','./manifest.webmanifest','./icon.svg','./icon-180.png','./icon-192.png','./icon-512.png'];
+const scope = self.registration.scope;
+const shellURLs = new Set(SHELL.map(path => new URL(path, scope).href));
+
+self.addEventListener('install', event => {
+  // Keep an open ledger on one release until its windows have closed.
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(
+    SHELL.map(path => new Request(new URL(path, scope), {cache: 'reload'}))
+  )));
 });
-self.addEventListener('activate',event=>{
- event.waitUntil(Promise.all([
-   caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('pokeledger-')&&key!==CACHE).map(key=>caches.delete(key)))),
-   self.clients.claim()
- ]));
+
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key.startsWith('pokeledger-performance-') && key !== CACHE)
+      .map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
 });
-self.addEventListener('fetch',event=>{
- const request=event.request;
- if(request.method!=='GET'||new URL(request.url).origin!==self.location.origin)return;
- const path=new URL(request.url).pathname;
- const staticAsset=SHELL.some(name=>path.endsWith('/'+name.replace(/^\.\//,'')))||path.endsWith('/pokeledger/');
- if(!staticAsset)return;
- // The document is network first so a new release is discovered quickly.
- // Versioned app scripts and the icon are cache first, avoiding repeat transfers.
- if(request.mode==='navigate'||path.endsWith('/index.html')||path.endsWith('/')){
-   event.respondWith(fetch(request).then(response=>{
-     if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(cache=>cache.put(request,copy)))}
-     return response;
-   }).catch(()=>caches.match(request).then(found=>found||caches.match('./index.html'))));
-   return;
- }
- event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{
-   if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(cache=>cache.put(request,copy)))}
-   return response;
- })));
+
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  url.search = '';
+  if (!shellURLs.has(url.href)) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    return await cache.match(url.href) || fetch(event.request);
+  })());
 });
