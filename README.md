@@ -65,3 +65,9 @@ Explore Sets now also includes **View All Cards**, a combined browsing grid that
 ## Universal category galleries
 
 In **Explore Sets**, selecting a category containing multiple subsets—such as Trainer Galleries, Black Star Promos, IRs & SIRs, Scarlet & Violet, Sword & Shield, or Vintage—now displays a **View All [Category] Cards** option above its individual subset tiles. The combined view loads cards in batches of up to 3 subsets at a time (4 for Trainer Galleries), with **Load more subsets** for additional cards. Each card shows its origin set, image zoom, raw price label, detailed source links and My Binder ownership controls. Categories with just one subset, such as a single Galarian Gallery, retain their direct checklist; illustrator searches remain dedicated artist collections. Large-category rarity details load progressively; until fetched, rarity sorting/filtering is provisional.
+
+## Restock Watch (free personal-use hub)
+
+The **Restock Watch** tab keeps Pokémon restock-report sources, prioritized sets (Ascended Heroes, Prismatic Evolutions, Paldean Fates, Paldea Evolved), preferred retailers (Target, Walmart, Costco, Pokémon Center, Best Buy, Amazon, and optional others), and custom product searches together. Preferences persist with local PokéLedger data and JSON backups. Source shortcuts open public RestockR reports, PokeRestock's delayed public alerts, Restockd updates, and the Los Angeles-area in-store restock history.
+
+**Accuracy boundary:** This release links to authoritative third-party public reports; it does not automatically ingest them as an in-app feed, monitor inventories in the background, send push notifications, or verify stock at an individual store. Third-party reports can be delayed and do not confirm live checkout availability. Retailer pages remain the source of truth. No paid integrations or credentials required.
