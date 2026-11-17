@@ -32,7 +32,7 @@ function form(){
  '<label class="span2">Receipt URL<input class="field" name="receipt" type="url" placeholder="Optional"></label></div>'+
  '<div class="haul-section-title"><h3>Cards in this haul</h3><button class="btn sm primary" type="button" onclick="pkHaulAdd()">+ Add another card</button></div>'+
  '<div id="pk-haul-rows">'+row()+'</div>'+
- '<div class="haul-calculator"><div><span>Card costs entered</span><b id="pk-haul-total">$0.00</b></div><div><span>Haul amount</span><b id="pk-haul-paid">—</b></div><div><span>Difference to allocate</span><b id="pk-haul-diff">—</b></div><p id="pk-haul-help">Assign the full haul expense to your cards. Include any tax, shipping or fees in the per-card cost amounts.</p></div>'+
+ '<div class="haul-calculator"><div><span>Card costs entered</span><b id="pk-haul-total">$0.00</b></div><div><span>Haul amount</span><b id="pk-haul-paid">—</b></div><div><span>Difference to allocate</span><b id="pk-haul-diff">—</b></div><p id="pk-haul-help">Enter each card cost. Any leftover haul amount stays as unallocated spending, separate from card values.</p></div>'+
  '<label class="span2">Notes<textarea class="field" name="notes" rows="2" placeholder="Shipping, fees, versions, haul details"></textarea></label>'+
  '<div class="modalFoot"><button class="btn" type="button" onclick="closeModal()">Cancel</button><button class="btn primary" type="submit">Save haul & cards</button></div></form>';
 }
@@ -54,14 +54,14 @@ function recalc(){const f=document.getElementById("pk-haul-form");if(!f)return;c
  if(node("pk-haul-total"))node("pk-haul-total").textContent=price(lineTotal);
  if(node("pk-haul-paid"))node("pk-haul-paid").textContent=paid===null?"—":price(paid);
  if(node("pk-haul-diff"))node("pk-haul-diff").textContent=paid===null?"—":price(paid-lineTotal);
- if(node("pk-haul-help"))node("pk-haul-help").textContent=paid===null?"Enter the haul total, then allocate the costs across the cards.":Math.abs(paid-lineTotal)<=1?"✓ Haul costs accounted for.":"Assign the remaining "+price(Math.abs(paid-lineTotal))+" difference across card costs, including tax or shipping.";
+ if(node("pk-haul-help"))node("pk-haul-help").textContent=paid===null?"Enter the haul total, then allocate the costs across the cards.":Math.abs(paid-lineTotal)<=1?"✓ Haul costs accounted for.":"The remaining "+price(Math.max(0,paid-lineTotal))+" stays as unallocated spending. You may include shipping in card costs if desired.";
  [...f.querySelectorAll(".haul-line")].forEach((r,i)=>{const el=r.querySelector(".haul-line-sum");if(el)el.textContent="Line "+(i+1)+": "+price(cents(entries[i].unitCost)*Number(entries[i].qty||0))+" paid"+(entries[i].marketValue!==""?" · "+price(cents(entries[i].marketValue)*Number(entries[i].qty||0))+" estimated market value":" · no market value yet")});
 }
 function submit(formEl){
  const fields=Object.fromEntries(new FormData(formEl));const {lineTotal,paid,entries}=totals(formEl);
  if(paid===null||!Number.isSafeInteger(paid)||paid<0)return alert("Enter a valid haul amount.");
  if(!entries.length)return alert("Add at least one card.");
- if(Math.abs(paid-lineTotal)>1)return alert("Card costs must equal the haul total. Allocate the difference to each card, including shipping and fees.");
+ if(lineTotal>paid+1)return alert("Card costs exceed the amount paid. Check the card costs.");
  const prepared=[];
  for(let i=0;i<entries.length;i++){
    const raw=entries[i],qty=Number(raw.qty),unitCost=Number(raw.unitCost);
@@ -84,7 +84,7 @@ function submit(formEl){
    db.statuses[c.id]={...old,state:"Owned",owner:fields.owner,qty:newQty,unitCost:blended===null?null:Math.round(blended*10000)/10000,condition:line.condition,marketUnitValue:line.mv===null?(old.marketUnitValue??null):line.mv,marketAsOf:line.mv===null?(old.marketAsOf??""):recordDate,marketSource:line.mv===null?(old.marketSource??""):"User-entered haul estimate"};
    cards.push({cardId:c.id,name:c.name,set:c.set,number:c.number,qty:line.qty,unitCost:line.unitCost,marketUnitValue:line.mv,condition:line.condition});
  }
- db.transactions.push({id:haulId,kind:"purchase",title:fields.title,date:recordDate,amount:paid/100,owner:fields.owner,merchant:fields.merchant||"",purpose:fields.purpose||"Hobby / family",type:fields.type||"Singles",receipt:fields.receipt||"",notes:fields.notes||"",haulCards:cards});
+ db.transactions.push({id:haulId,kind:"purchase",title:fields.title,date:recordDate,amount:paid/100,owner:fields.owner,merchant:fields.merchant||"",purpose:fields.purpose||"Hobby / family",type:fields.type||"Singles",receipt:fields.receipt||"",notes:fields.notes||"",unallocatedAmount:Math.max(0,(paid-lineTotal)/100),haulCards:cards});
  closeModal();save();
  alert(cards.length+" card entries saved in My Collection. Total haul: "+price(paid)+".");
 }
