@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path(__file__).resolve().parents[1]
 required = [
     "AGENTS.md",
     "CLAUDE.md",
@@ -17,6 +17,8 @@ required = [
     ".gitos/work-orders/WO-001.md",
     ".claude/settings.json",
     ".githooks/pre-commit",
+    ".gitos/upstream/engineering-disciplines.md",
+    ".gitos/upstream/LICENSE",
     "tests/core.test.cjs",
     "tests/transactions.test.cjs",
 ]
