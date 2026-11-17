@@ -126,7 +126,7 @@
    <div id="px-cardresults">${cardsPanel()}</div>
    <div class="px-note">Card rarities load progressively; until then, sort order is provisional. Some subset scans are missing from public databases. Saved cards are local to your device.</div>`;
  }
- function repaint(){if(typeof page!=="undefined"&&page!=="explore")return;const node=document.getElementById("px-main");if(node)node.innerHTML=x.set?selectedPanel():setsPanel()}
+ function repaint(){if(window.PokeAllCards?.active)return;if(typeof page!=="undefined"&&page!=="explore")return;const node=document.getElementById("px-main");if(node)node.innerHTML=x.set?selectedPanel():setsPanel()}
  function repaintCards(){if(typeof page!=="undefined"&&page!=="explore")return;const node=document.getElementById("px-cardresults");if(node&&x.set&&!x.working)node.innerHTML=cardsPanel()}
  async function loadSets(){
    if(x.loading)return;
