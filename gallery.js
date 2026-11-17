@@ -1,7 +1,7 @@
 (function(){
 "use strict";
 const E=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const cache=new Map(),work=new Set();
+const cache=new Map();
 let observer=null,rootObserver=null,pool=0;const queue=[];
 const valid=id=>/^[\w.+-]+$/.test(String(id||""));
 function money(x){return "$"+Number(x).toFixed(2)}
@@ -29,6 +29,7 @@ async function load(id){
  if(cache.has(id))return cache.get(id);
  const promise=window.PokeMarket?.load?window.PokeMarket.load(id):fetch("https://api.tcgdex.net/v2/en/cards/"+encodeURIComponent(id)).then(r=>{if(!r.ok)throw Error("Price unavailable");return r.json()});
  cache.set(id,promise);
+ if(cache.size>320)cache.delete(cache.keys().next().value);
  return promise;
 }
 function badge(id,owned){
@@ -57,19 +58,37 @@ async function apply(el,id){
 }
 function drain(){while(pool<4&&queue.length){const [el,id]=queue.shift();if(!el.isConnected)continue;pool++;apply(el,id).finally(()=>{pool--;drain()})}}
 function enqueue(el){if(el.dataset.queued)return;el.dataset.queued="yes";queue.push([el,el.getAttribute("data-pkprice")]);drain()}
-function observePrices(){
- const holder=document.getElementById("app");if(!holder)return;
- if(observer)observer.disconnect();
- if("IntersectionObserver" in window){
- observer=new IntersectionObserver(entries=>{entries.forEach(x=>{if(x.isIntersecting){enqueue(x.target);observer.unobserve(x.target)}})},{rootMargin:"350px"});
- holder.querySelectorAll("[data-pkprice]:not([data-queued])").forEach(el=>observer.observe(el));
- }else holder.querySelectorAll("[data-pkprice]:not([data-queued])").forEach(enqueue);
+function observePrices(root){
+ if(document.hidden)return;
+ const host=document.getElementById("app");if(!host)return;
+ const scope=root||host;
+ const process=element=>{
+   if(element.nodeType!==1)return;
+   if(element.matches?.("[data-pkprice]:not([data-queued])")){
+     if(observer)observer.observe(element);else enqueue(element);
+   }
+   element.querySelectorAll?.("[data-pkprice]:not([data-queued])").forEach(el=>{
+     if(observer)observer.observe(el);else enqueue(el);
+   });
+ };
+ process(scope);
 }
 function start(){
  const node=document.getElementById("app");if(!node)return;
- let scheduled=false;
- rootObserver=new MutationObserver(()=>{if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;observePrices()})});
+ if("IntersectionObserver" in window){
+   observer=new IntersectionObserver(entries=>{
+     if(document.hidden)return;
+     for(const entry of entries){if(entry.isIntersecting){observer.unobserve(entry.target);enqueue(entry.target)}}
+   },{rootMargin:"200px"});
+ }
+ rootObserver=new MutationObserver(records=>{
+   if(document.hidden)return;
+   for(const record of records){
+     for(const added of record.addedNodes){if(added.nodeType===1)observePrices(added)}
+   }
+ });
  rootObserver.observe(node,{childList:true,subtree:true});
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden)observePrices()});
  observePrices();
 }
 const hi=image=>{
