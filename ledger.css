@@ -143,3 +143,4 @@ body.ledger-mode .notice{background:var(--yellow);border:2px solid var(--ink);bo
 }
 @media(max-width:350px){body.ledger-mode .shell{padding-left:14px;padding-right:14px}.ledger-header{gap:6px}.save-chip{padding:7px 9px;font-size:11px}.ledger-header .brand{font-size:20px!important;gap:4px}.spending-hero strong,.resale-hero strong{font-size:39px}.ledger-profiles{gap:11px}.profile-card{padding:10px}.profile-card strong{font-size:26px}.profile-top b{font-size:15px}.ledger-nav>.ledger-add{margin-left:4px;margin-right:4px}.ledger-welcome h1{font-size:36px}.ledger-welcome{grid-template-columns:1fr 82px}.welcome-mascot .spriteIcon{width:76px;height:76px}}
 @media(prefers-reduced-motion:reduce){body.ledger-mode *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+.profile-card small,.spending-hero small{color:#38352f}
