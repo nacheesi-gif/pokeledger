@@ -1,7 +1,7 @@
 # PokéLedger · Work Order Ledger
 
 ## Active
-- WO-001 — Discipline adoption and automated regression foundations. Branch: `gitos-discipline-audit`. Status: implementing / verifying.
+- WO-001 — Discipline adoption and automated regression foundations. Status: VERIFIED (18/18 behavioral tests, project-scoped hooks, CI). Integration to original `main` pending.
 
 ## Next (scoped proposals — not yet implemented)
 - WO-002 — Measure 500-card/1,000-transaction real-device performance, then optimize observed bottlenecks.
