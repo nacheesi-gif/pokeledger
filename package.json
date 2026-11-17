@@ -1,0 +1,11 @@
+{
+  "name": "pokeledger",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Personal-use Pokémon collection PWA; zero dependency regression gates",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "check": "node scripts/check.cjs",
+    "verify": "npm run check && npm test"
+  }
+}
