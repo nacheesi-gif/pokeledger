@@ -28,5 +28,7 @@ description: Apply evidence-led, scoped, verifiable software development to any 
 Find → Plan → Implement → Verify → Land. Put facts in brain, decisions in ADR, actions in work orders, and runtime behavior in code; avoid duplicated truth.
 
 ## References
+Read `.gitos/upstream/engineering-disciplines.md` for the reviewed upstream rule definitions when evaluating a difficult change. Its MIT license is kept in `.gitos/upstream/LICENSE`.
+
 Gitos upstream: https://github.com/wizzo-gmb/gitos — MIT © 2026 Wizzo.
 Full upstream engine is a Claude Code skill and is not installed or executed by the mere presence of this file.
