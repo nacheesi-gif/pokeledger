@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: '43 20 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/sync_prices.py'
+      - '.github/workflows/prices.yml'
 permissions:
   contents: read
 concurrency:

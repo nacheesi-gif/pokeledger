@@ -89,3 +89,21 @@ except ValueError:
 `],{encoding:"utf8"});
  assert.equal(result.status,0,result.stderr);
 });
+test("published all-set cache has consistent dates, buckets and valid USD Market Prices",()=>{
+ const index=JSON.parse(read("data/tcgplayer-prices/index.json"));
+ assert.ok(index.groups>=221);
+ assert.ok(index.products>10000);
+ let count=0;
+ for(const key of index.buckets){
+  const file=JSON.parse(read("data/tcgplayer-prices/"+key+".json"));
+  assert.equal(file.updated,index.updated);
+  assert.equal(file.unit,"USD");
+  for(const [id,variants] of Object.entries(file.products)){
+   assert.equal(Math.floor(Number(id)/10000),Number(key));
+   count++;
+   for(const value of Object.values(variants))assert.ok(Number.isFinite(value)&&value>=0);
+  }
+ }
+ assert.equal(count,index.products);
+ assert.ok(JSON.parse(read("data/tcgplayer-prices/26.json")).products["264210"].holofoil>=0);
+});

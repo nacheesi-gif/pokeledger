@@ -89,7 +89,7 @@ async function open(id,fallback){
  try{const card=await load(id);const el=document.getElementById("pm-body");if(el)el.innerHTML=render(card);}
  catch(e){const el=document.getElementById("pm-body");if(el)el.textContent="Could not load market sources: "+e.message+". Check your connection and try again.";}
 }
-function openOwned(id){const c=getCard(id);if(!c)return;open(c.tcgdexId||(/^[a-z0-9]+(?:\.\d+)?-[\w-]+$/i.test(c.id)?c.id:""),c.name)}
+function openOwned(id){const card=getCard(id);if(card)open(window.PokeGallery.catalogID(card),card.name)}
 const style='<style id="pm-style">.pm-cardhead{display:flex;gap:15px;align-items:flex-start;margin:14px 0}.pm-picture{width:92px;max-height:140px;object-fit:contain}.pm-cardhead b{font-size:19px}.pm-cardhead p{color:#61758f;font-size:12px;margin:5px 0}.pm-warning{font-size:12px;color:#80531c;background:#fff3d9;border:1px solid #e8d1a7;border-radius:9px;padding:10px}.pm-muted{font-size:12px;color:#667b97;margin:10px 0}.pm-price{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #ebf0f7;padding:10px 0}.pm-price span small{display:block;color:#8794a7}.pm-price strong{font-size:19px;color:#195fad}.pm-links{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:12px 0}.pm-source{border:1px solid #c6dcf6;background:#f0f7ff;padding:12px 8px;border-radius:11px;font-size:12px;color:#245fba;text-decoration:none;font-weight:750}.pm-source:hover{background:#dfeeff}@media(max-width:480px){.pm-links{grid-template-columns:1fr}}</style>';
 document.head.insertAdjacentHTML("beforeend",style);
 window.PokeMarket={open,openOwned,load,supplement,productIDs};
