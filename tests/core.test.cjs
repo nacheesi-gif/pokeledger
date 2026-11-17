@@ -47,7 +47,7 @@ test("dashboard realized profit excludes unrealized cards and unknown-cost sales
  {kind:"sale",amount:30,fees:2,shipping:3,costBasis:10,date:"2026-11-16"},
  {kind:"sale",amount:90,fees:1,costBasis:null,date:"2026-11-16"}
  ]};
- const context={db,ownedCards:()=>[{id:"a"},{id:"b"}],today:()=> "2026-11-16",Number,Math};
+ const context={db,ownedCards:()=>[{id:"a"},{id:"b"}],today:()=> "2026-11-16",Number,Math,purchase:t=>t.kind==="purchase",sale:t=>t.kind==="sale",cashout:t=>t.kind==="cashout",txSum:fn=>db.transactions.filter(fn).reduce((a,t)=>a+(Number(t.amount)||0),0)};
  const js=html.slice(start,end);
  // Validate the real functions without running the app's DOM/bootstrap code.
  vm.runInNewContext(js,context,{filename:"dashboard-calculations.js"});
