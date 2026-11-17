@@ -215,7 +215,8 @@
    }catch(e){if(x.token!==t)return;x.working=false;x.setError=e.message;repaint()}
  }
  async function enrich(t){
-   const todo=x.cards.slice(0,Math.min(x.cards.length,x.limit+12)).filter(c=>!x.details[c.id]);if(!todo.length||document.hidden)return;
+   const detailCap=navigator.connection?.saveData?Math.min(x.limit,24):x.limit+12;
+   const todo=x.cards.slice(0,Math.min(x.cards.length,detailCap)).filter(c=>!x.details[c.id]);if(!todo.length||document.hidden)return;
    x.running=true;let index=0,finished=0;
    async function worker(){
      while(t===x.token && index<todo.length){
@@ -226,7 +227,7 @@
        if(!document.hidden&&(finished%24===0||finished===todo.length))repaintCards();
      }
    }
-   await Promise.all(Array.from({length:Math.min(2,todo.length)},worker));
+   await Promise.all(Array.from({length:Math.min(navigator.connection?.saveData?1:2,todo.length)},worker));
    if(t===x.token){
       x.running=false;
       const data=cache(),details=data.details||{};
