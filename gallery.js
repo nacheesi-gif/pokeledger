@@ -67,6 +67,7 @@ async function zoom(id,origin){
  let card=null;
  if(origin==="binder")card=typeof getCard==="function"?getCard(id):null;
  if(origin==="explore")card=window.pxCard?.(id)||null;
+ if(origin==="scanner")card=window.PokeScanner?.card?.(id)||null;
  if(!card)return;
  const name=E(card.name),idForPrices=card.tcgdexId||card.id;
  let art=hi(card.image||""),rawid=valid(idForPrices)?idForPrices:"";
