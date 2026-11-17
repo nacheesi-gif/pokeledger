@@ -47,12 +47,13 @@ function makeFrame(){
  const guide=document.querySelector(".psc-guidebox").getBoundingClientRect();
  const area=frameArea(video.videoWidth,video.videoHeight,bounds.width,bounds.height,
    guide.left-bounds.left,guide.top-bounds.top,guide.width,guide.height);
- const c=cropCanvas();c.width=1040;c.height=1456;
+ const c=cropCanvas();c.width=Math.round(area[2]);c.height=Math.round(area[3]);
  c.getContext("2d").drawImage(video,...area,0,0,c.width,c.height);return c;
 }
 function frameFromImage(img){
- const c=cropCanvas();c.width=1040;c.height=1456;const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+ const c=cropCanvas();const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
  const dw=iw/ih>0.72?ih*.72:iw,dh=dw/0.72,x=(iw-dw)/2,y=(ih-dh)/2;
+ const scale=Math.min(1,1800/dh);c.width=Math.round(dw*scale);c.height=Math.round(dh*scale);
  c.getContext("2d").drawImage(img,x,y,dw,dh,0,0,c.width,c.height);return c;
 }
 async function getWorker(){
@@ -97,7 +98,7 @@ function nameQueries(text,names){
  for(const name of names){
   for(const word of normalize(name).split(" ")){
    if(word.length<3 || ignored.has(word) || evidence.has(word))continue;
-   const limit=word.length>=7?2:word.length>=5?1:0;
+   const limit=word.length>=7?2:word.length>=6?1:0;
    const errors=words.map(token=>distance(token,word,limit));
    const best=errors.length?Math.min(...errors):3;
    evidence.set(word,best<=limit?1-best/word.length:0);
@@ -162,25 +163,38 @@ function beginLookup(){
 }
 function textRegion(canvas,region,enhance=false){
  const [left,top,width,height]=region.map((value,i)=>value*(i%2?canvas.height:canvas.width));
- const output=cropCanvas(),scale=1560/width;
- output.width=1560;output.height=Math.round(height*scale);
- const ctx=output.getContext("2d",{willReadFrequently:enhance});
- ctx.drawImage(canvas,left,top,width,height,0,0,output.width,output.height);
+ const source=cropCanvas();
+ source.width=Math.round(width);source.height=Math.round(height);
+ const ctx=source.getContext("2d",{willReadFrequently:enhance});
+ ctx.drawImage(canvas,left,top,width,height,0,0,source.width,source.height);
  if(enhance){
-  const image=ctx.getImageData(0,0,output.width,output.height),data=image.data;
+  const image=ctx.getImageData(0,0,source.width,source.height),data=image.data;
   const levels=new Uint8Array(data.length/4);
   for(let i=0,j=0;i<data.length;i+=4,j++)levels[j]=Math.round(data[i]*.299+data[i+1]*.587+data[i+2]*.114);
   const histogram=new Uint32Array(256);
   for(const value of levels)histogram[value]++;
-  let low=0,high=255,count=0;
-  while(low<254&&(count+=histogram[low])<levels.length*.01)low++;
-  count=0;while(high>low+1&&(count+=histogram[high])<levels.length*.01)high--;
+  let low=0,high=255,cut=Math.floor(levels.length*.01);
+  while(low<255&&cut>=histogram[low]){cut-=histogram[low];low++}
+  cut=Math.floor(levels.length*.01);
+  while(high>low+1&&cut>=histogram[high]){cut-=histogram[high];high--}
+  if(high-low<2){low=0;high=255}
+  let total=0;
+  for(let i=0;i<levels.length;i++){
+   levels[i]=Math.max(0,Math.min(255,Math.floor((levels[i]-low)*255/(high-low))));
+   total+=levels[i];
+  }
+  const mean=Math.round(total/levels.length);
   for(let i=0,j=0;i<data.length;i+=4,j++){
-   const value=Math.max(0,Math.min(255,((levels[j]-low)*255/(high-low)-128)*1.5+128));
+   const value=Math.max(0,Math.min(255,Math.floor((levels[j]-mean)*1.5+mean)));
    data[i]=data[i+1]=data[i+2]=value;
   }
   ctx.putImageData(image,0,0);
  }
+ const output=cropCanvas();
+ output.width=1560;output.height=Math.round(source.height*1560/source.width);
+ const outputContext=output.getContext("2d");
+ outputContext.imageSmoothingQuality="high";
+ outputContext.drawImage(source,0,0,output.width,output.height);
  return output;
 }
 async function loadCandidatePrices(candidates){

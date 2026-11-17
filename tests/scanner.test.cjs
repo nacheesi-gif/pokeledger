@@ -17,6 +17,8 @@ test("sanitized real OCR output resolves Charzard X to canonical Mega Charizard 
  assert.ok(scanner.nameQueries("Gengor",names).includes("Gengar"));
  assert.ok(scanner.nameQueries("Porygon2",names).includes("Porygon2"));
  assert.equal(scanner.nameQueries("xxyzzyqbl",names).length,0);
+ assert.equal(scanner.nameQueries("Lane",names).length,0);
+ assert.equal(scanner.nameQueries("all Mega Charizard",names)[0],"Mega Charizard X ex");
 });
 test("collector parsing supports promo numbers, subsets and printed fractions",()=>{
  const scanner=harness();
