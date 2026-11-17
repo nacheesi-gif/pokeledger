@@ -2,25 +2,25 @@
 "use strict";
 const API="https://api.tcgdex.net/v2/en";
 const E=t=>String(t??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const S={stream:null,worker:null,loading:null,scanning:false,auto:false,timer:null,candidates:[],lastText:"",lastScan:"",fromUpload:false,lastBitmap:null,token:0};
+const S={stream:null,worker:null,loading:null,scanning:false,auto:false,timer:null,candidates:[],lastText:"",lastScan:"",fromUpload:false,lastBitmap:null,token:0,operation:0,abort:null};
 const validID=id=>/^[\w.+-]+$/.test(String(id||""));
 const cropCanvas=()=>document.createElement("canvas");
 function state(msg,kind=""){const el=document.getElementById("psc-status");if(el){el.textContent=msg;el.dataset.kind=kind}}
 function photoHTML(){
 return '<header class="psc-head"><div><span class="psc-tag">POKÉLEDGER · RAPID SCAN TEST</span><h1>Scan Pokémon Cards</h1><p>Camera or photo → OCR → confirm exact card → add to your collection</p></div></header>'+
 '<div class="psc-layout"><div class="psc-camera"><div class="psc-viewport"><video id="psc-video" autoplay muted playsinline></video><div class="psc-guides"><span>Align one card inside the frame</span><div class="psc-guidebox"></div></div></div><canvas id="psc-canvas" hidden></canvas><div class="psc-actions"><button class="btn primary" onclick="pscStart()">Start camera</button><button class="btn" onclick="pscCapture()">Read card</button><button class="btn" id="psc-auto" onclick="pscAuto()">Auto: OFF</button><button class="btn" onclick="pscStop()">Stop</button></div><label class="psc-upload">Or upload a card photo <input type="file" accept="image/*" onchange="pscUpload(this)" aria-label="Upload a photo of one Pokémon card"></label><p id="psc-status" class="psc-state" role="status">Camera is off. Start the camera or upload a photo to test recognition.</p><p class="psc-tip">First recognition loads the OCR engine and English data. Subsequent scans reuse it. Photos are processed on this device; card names are searched using TCGdex.</p></div>'+
-'<div class="psc-results"><label>Search manually or correct an OCR result<input id="psc-manual" class="field" type="search" placeholder="Eevee, Charizard ex, Pikachu…" onkeydown="if(event.key===\'Enter\'){event.preventDefault();pscSearch()}"></label><div class="psc-actions"><button class="btn primary" onclick="pscSearch()">Find card</button><button class="btn" onclick="pscClear()">Clear results</button></div><div class="psc-choice"><label>Card belongs to<select id="psc-owner" class="field">'+db.members.map(m=>'<option value="'+E(m)+'">'+E(m)+'</option>').join("")+'</select></label><label>Collection binder<select id="psc-binder" class="field">'+(window.PokeCollections?.binderOptions?.()||'<option value="">Main collection</option>')+'</select></label></div><div id="psc-results"><div class="psc-placeholder">Matches will appear here with card artwork, set, and number. Confirm the correct printing before saving.</div></div></div></div>'+
+'<div class="psc-results"><label>Search manually or correct an OCR result<input id="psc-manual" class="field" type="search" placeholder="Eevee, Charizard ex, Pikachu…" onkeydown="if(event.key===\'Enter\'){event.preventDefault();pscSearch()}"></label><label>Collector number (optional)<input id="psc-number" class="field" placeholder="023, TG01, 198/165" onkeydown="if(event.key===\'Enter\'){event.preventDefault();pscSearch()}"></label><div class="psc-actions"><button class="btn primary" onclick="pscSearch()">Find card</button><button class="btn" onclick="pscClear()">Clear results</button></div><div class="psc-choice"><label>Card belongs to<select id="psc-owner" class="field">'+db.members.map(m=>'<option value="'+E(m)+'">'+E(m)+'</option>').join("")+'</select></label><label>Collection binder<select id="psc-binder" class="field">'+(window.PokeCollections?.binderOptions?.()||'<option value="">Main collection</option>')+'</select></label></div><div id="psc-results"><div class="psc-placeholder">Matches will appear here with card artwork, set, and number. Confirm the correct printing before saving.</div></div></div></div>'+
 '<div class="psc-disclaimer">This is an OCR-based scanner, not artwork-based visual identification. Similar printings can look alike. Always verify the set, collector number, and variant. Camera needs HTTPS and permission; internet is required for the recognition library and card lookups.</div>';
 }
 function render(){return '<div id="psc-root">'+photoHTML()+'</div>'}
 let cameraRequest=0;
-function stop(){cameraRequest++;S.auto=false;S.token++;if(S.timer)clearTimeout(S.timer);S.timer=null;if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null}const video=document.getElementById("psc-video");if(video){video.pause();video.srcObject=null;}const auto=document.getElementById("psc-auto");if(auto)auto.textContent="Auto: OFF";}
+function stop(){cameraRequest++;S.operation++;S.abort?.abort();S.auto=false;S.token++;if(S.timer)clearTimeout(S.timer);S.timer=null;if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null}const video=document.getElementById("psc-video");if(video){video.pause();video.srcObject=null;}const auto=document.getElementById("psc-auto");if(auto)auto.textContent="Auto: OFF";}
 async function start(){
  if(!navigator.mediaDevices?.getUserMedia)return state("Camera unavailable. Upload a photo instead.");
  stop();
  const request=cameraRequest;
  try{
-  const acquired=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:960}}});
+  const acquired=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1440}}});
   const video=document.getElementById("psc-video");
   if(request!==cameraRequest || document.hidden || !video){
    acquired.getTracks().forEach(track=>track.stop());
@@ -47,12 +47,13 @@ function makeFrame(){
  const guide=document.querySelector(".psc-guidebox").getBoundingClientRect();
  const area=frameArea(video.videoWidth,video.videoHeight,bounds.width,bounds.height,
    guide.left-bounds.left,guide.top-bounds.top,guide.width,guide.height);
- const c=cropCanvas();c.width=780;c.height=1092;
+ const c=cropCanvas();c.width=Math.round(area[2]);c.height=Math.round(area[3]);
  c.getContext("2d").drawImage(video,...area,0,0,c.width,c.height);return c;
 }
 function frameFromImage(img){
- const c=cropCanvas();c.width=780;c.height=1092;const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+ const c=cropCanvas();const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
  const dw=iw/ih>0.72?ih*.72:iw,dh=dw/0.72,x=(iw-dw)/2,y=(ih-dh)/2;
+ const scale=Math.min(1,1800/dh);c.width=Math.round(dw*scale);c.height=Math.round(dh*scale);
  c.getContext("2d").drawImage(img,x,y,dw,dh,0,0,c.width,c.height);return c;
 }
 async function getWorker(){
@@ -68,28 +69,133 @@ async function getWorker(){
  })();
  try{return await S.loading}finally{S.loading=null}
 }
-const normalize=s=>String(s||"").toLowerCase().replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
-const localNum=s=>String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+const normalize=s=>String(s||"").normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\blv[.\s]*x\b/g," lvx ").replace(/[^a-z0-9 ]+/g," ").replace(/\s+/g," ").trim();
+const localNum=s=>String(s||"").toUpperCase().replace(/[^A-Z0-9]/g,"").replace(/^0+(?=\d)/,"");
+const ignored=new Set("a an and as at by for from in into of on or s the to with your you card cards pokemon basic stage hp ex gx v vmax vstar mega m x y lvx radiant dark light team rocket energy".split(" "));
+let nameCatalog=null;
+async function getNames(){
+ if(!nameCatalog)nameCatalog=fetch("./data/card-names.json").then(response=>{
+  if(!response.ok)throw Error("Name index unavailable");
+  return response.json();
+ }).catch(error=>{nameCatalog=null;throw error});
+ return nameCatalog;
+}
+function distance(a,b,limit=2){
+ if(Math.abs(a.length-b.length)>limit)return limit+1;
+ let row=Array.from({length:b.length+1},(_,i)=>i);
+ for(let i=1;i<=a.length;i++){
+  const next=[i];
+  for(let j=1;j<=b.length;j++)next[j]=Math.min(next[j-1]+1,row[j]+1,row[j-1]+(a[i-1]===b[j-1]?0:1));
+  if(Math.min(...next)>limit)return limit+1;
+  row=next;
+ }
+ return row[b.length];
+}
+function nameQueries(text,names){
+ const tokens=[...new Set(normalize(text).split(" "))].slice(0,60);
+ const words=tokens.filter(token=>token.length>=3 && !ignored.has(token) && /^[a-z0-9]+$/.test(token) && /[a-z]/.test(token));
+ const evidence=new Map();
+ for(const name of names){
+  for(const word of normalize(name).split(" ")){
+   if(word.length<3 || ignored.has(word) || evidence.has(word))continue;
+   const limit=word.length>=7?2:word.length>=6?1:0;
+   const errors=words.map(token=>distance(token,word,limit));
+   const best=errors.length?Math.min(...errors):3;
+   evidence.set(word,best<=limit?1-best/word.length:0);
+  }
+ }
+ const ranked=names.map(name=>{
+  const parts=normalize(name).split(" "),keys=parts.filter(part=>part.length>=3&&!ignored.has(part));
+  if(!keys.length || keys.some(key=>!evidence.get(key)))return null;
+  const quality=Math.min(...keys.map(key=>evidence.get(key)))*100;
+  const specific=parts.filter(part=>["mega","x","y","ex","gx","v","vmax","vstar"].includes(part)&&tokens.includes(part)).length*4;
+  return {name,score:quality+specific};
+ }).filter(Boolean).sort((a,b)=>b.score-a.score||a.name.length-b.name.length);
+ const seen=new Set();
+ return ranked.filter(item=>{const key=item.name.toLowerCase();if(seen.has(key))return false;seen.add(key);return true}).slice(0,3).map(item=>item.name);
+}
 function parseText(text){
- const lines=String(text).split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
- const possible=lines.map(l=>l.replace(/(?:\bHP\b\s*\d+|\d+\s*\bHP\b)/ig,"").replace(/[^A-Za-z0-9' -]/g," ").trim())
-  .filter(l=>l.length>2&&l.length<36&&!/^(basic|stage|trainer|supporter|item|energy|weakness|resistance|retreat|illustrator|ability|pok.mon|the pok.mon|level|evolves|rule|damage|draw|attack)/i.test(l));
- const findNumber=text.match(/\b(?:TG\d{1,2}|GG\d{1,2}|SVP\s?\d{1,3}|[A-Z]{0,2}\d{1,3})\s*\/\s*(?:[A-Z]{0,2}\d{2,3})\b/i);
- const matchNum=findNumber?findNumber[0].split("/")[0].replace(/\s+/g,""):"";
- return {queries:[...new Set(possible.map(l=>l.replace(/\s+\d+$/,"").trim()))].slice(0,3),number:matchNum,lines};
+ const lines=String(text||"").split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
+ const fraction=String(text).match(/\b((?:TG|GG|SV)?\d{1,3})\s*[/|]\s*((?:TG|GG)?\d{2,3})\b/i);
+ const promo=String(text).match(/\b(?:SVP|SWSH|SM|XY|MEP)\s*(?:EN\s*)?(\d{1,3})\b/i);
+ const number=fraction?fraction[1]:promo?promo[1]:"";
+ const queries=lines.map(line=>line.replace(/(?:\bHP\b\s*\d+|\d+\s*\bHP\b)/ig,"").replace(/[^A-Za-z' -]/g," ").replace(/\s+/g," ").trim())
+  .filter(line=>line.length>3&&line.length<40&&!/^(basic|stage|trainer|supporter|item|energy|weakness|resistance|retreat|illustrator|ability|pokemon|evolves|rule|damage|draw|attack)/i.test(line));
+ return {queries:[...new Set(queries)].slice(0,3),number,lines};
 }
-async function apiSearch(name){
- const params=new URLSearchParams({"name":name,"pagination:page":"1","pagination:itemsPerPage":"200"});
- const res=await fetch(API+"/cards?"+params.toString());
- if(!res.ok)throw Error("Card search failed ("+res.status+")");
- const list=await res.json();return Array.isArray(list)?list:[];
+async function apiSearch(query,number="",signal){
+ const params=new URLSearchParams({"pagination:page":"1","pagination:itemsPerPage":"200"});
+ if(query)params.set("name",query);
+ if(number)params.set("localId","eq:"+number);
+ const response=await fetch(API+"/cards?"+params.toString(),{signal});
+ if(!response.ok)throw Error("Card search returned "+response.status);
+ const list=await response.json();
+ if(!Array.isArray(list))throw Error("Card search returned an invalid response");
+ return list;
 }
-function score(c,query,num){
- const name=normalize(c.name),a=normalize(query);
- let value=name===a?100:name.includes(a)?60:a.includes(name)?40:0;
- if(num&&localNum(c.localId)===localNum(num))value+=140;
- if(String(c.id).startsWith("swsh")&&String(num).toUpperCase().startsWith("TG"))value+=20;
- return value;
+function score(card,query,number){
+ const name=normalize(card.name),target=normalize(query);
+ return (name===target?100:name.includes(target)?60:target.includes(name)?40:0)+
+  (number&&localNum(card.localId)===localNum(number)?140:0);
+}
+async function findMatches(queries,number,signal){
+ const found=new Map();let succeeded=0,failed=0;
+ for(const query of queries.slice(0,3)){
+  try{
+   const list=await apiSearch(query,"",signal);succeeded++;
+   for(const card of list)found.set(card.id,card);
+  }catch(error){if(error.name==="AbortError")throw error;failed++}
+ }
+ if(!found.size&&number){
+  try{
+   const list=await apiSearch("",number,signal);succeeded++;
+   for(const card of list)found.set(card.id,card);
+  }catch(error){if(error.name==="AbortError")throw error;failed++}
+ }
+ if(!succeeded&&failed)throw Error("Card lookup is unavailable. Check your connection and retry.");
+ return [...found.values()].sort((a,b)=>score(b,queries[0]||"",number)-score(a,queries[0]||"",number)).slice(0,12);
+}
+function current(operation){return operation===S.operation&&!document.hidden}
+function beginLookup(){
+ S.abort?.abort();
+ S.abort=typeof AbortController==="function"?new AbortController():null;
+ return ++S.operation;
+}
+function textRegion(canvas,region,enhance=false){
+ const [left,top,width,height]=region.map((value,i)=>value*(i%2?canvas.height:canvas.width));
+ const source=cropCanvas();
+ source.width=Math.round(width);source.height=Math.round(height);
+ const ctx=source.getContext("2d",{willReadFrequently:enhance});
+ ctx.drawImage(canvas,left,top,width,height,0,0,source.width,source.height);
+ if(enhance){
+  const image=ctx.getImageData(0,0,source.width,source.height),data=image.data;
+  const levels=new Uint8Array(data.length/4);
+  for(let i=0,j=0;i<data.length;i+=4,j++)levels[j]=Math.round(data[i]*.299+data[i+1]*.587+data[i+2]*.114);
+  const histogram=new Uint32Array(256);
+  for(const value of levels)histogram[value]++;
+  let low=0,high=255,cut=Math.floor(levels.length*.01);
+  while(low<255&&cut>=histogram[low]){cut-=histogram[low];low++}
+  cut=Math.floor(levels.length*.01);
+  while(high>low+1&&cut>=histogram[high]){cut-=histogram[high];high--}
+  if(high-low<2){low=0;high=255}
+  let total=0;
+  for(let i=0;i<levels.length;i++){
+   levels[i]=Math.max(0,Math.min(255,Math.floor((levels[i]-low)*255/(high-low))));
+   total+=levels[i];
+  }
+  const mean=Math.round(total/levels.length);
+  for(let i=0,j=0;i<data.length;i+=4,j++){
+   const value=Math.max(0,Math.min(255,Math.floor((levels[j]-mean)*1.5+mean)));
+   data[i]=data[i+1]=data[i+2]=value;
+  }
+  ctx.putImageData(image,0,0);
+ }
+ const output=cropCanvas();
+ output.width=1560;output.height=Math.round(source.height*1560/source.width);
+ const outputContext=output.getContext("2d");
+ outputContext.imageSmoothingQuality="high";
+ outputContext.drawImage(source,0,0,output.width,output.height);
+ return output;
 }
 async function loadCandidatePrices(candidates){
  await Promise.allSettled(candidates.slice(0,3).map(async c=>{
@@ -112,33 +218,66 @@ function printMatches(list,meta){
 }
 async function search(raw){
  if(S.scanning)return;
- const q=String(raw||"").trim();
- if(!q){state("Type a card name or scan a card first.","error");return}
+ const query=String(raw||"").trim(),number=String(document.getElementById("psc-number")?.value||"").split("/")[0].trim();
+ if(!query&&!number)return state("Type a card name or collector number.","error");
+ const operation=beginLookup();
  state("Looking up matching cards…");
- try{const matches=await apiSearch(q);matches.sort((a,b)=>score(b,q,"")-score(a,q,""));printMatches(matches.slice(0,12),"Search: "+q);state(matches.length+" possible matches. Confirm the exact card before adding.");}
- catch(e){state("Search unavailable: "+e.message,"error")}
+ try{
+  const matches=await findMatches(query?[query]:[],number,S.abort?.signal);
+  if(!current(operation))return;
+  printMatches(matches,"Search: "+query+(number?" · #"+number:""));
+  state(matches.length?matches.length+" possible matches. Confirm the exact printing before adding.":"No matching cards. Check the name and collector number.",matches.length?"":"error");
+ }catch(error){if(current(operation))state(error.message,"error")}
 }
 async function manual(){return search(document.getElementById("psc-manual")?.value)}
-async function recognize(c){
+async function recognize(canvas){
  if(S.scanning)return;
- S.scanning=true;state("Reading printed text…");
+ S.scanning=true;
+ const operation=beginLookup();
+ state("Reading card name and collector number…");
  try{
- const worker=await getWorker();const result=await worker.recognize(c);
- const text=result.data?.text||"";S.lastText=text;
- const parsed=parseText(text);if(!parsed.queries.length&&!parsed.number){state("Could not read a name. Improve lighting, bring the card closer, or type its name.","error");printMatches([]);return}
- state("Looking for "+(parsed.queries[0]||parsed.number)+"…");
- const found=new Map();let chosen="";
- for(const term of parsed.queries.slice(0,3)){
-  try{const list=await apiSearch(term);if(!chosen&&list.length)chosen=term;for(const c of list.slice(0,200))found.set(c.id,c);if(found.size>250)break}catch{}
- }
- if(!found.size&&parsed.number){
-  const list=await fetch(API+"/cards?"+new URLSearchParams({localId:parsed.number,"pagination:itemsPerPage":"100","pagination:page":"1"})).then(r=>r.ok?r.json():[]);for(const c of list)found.set(c.id,c);
- }
- const best=[...found.values()].sort((a,b)=>score(b,chosen||parsed.queries[0],parsed.number)-score(a,chosen||parsed.queries[0],parsed.number)).slice(0,12);
- printMatches(best,parsed.queries[0]+(parsed.number?" · "+parsed.number:""));
- state(best.length?best.length+" suggested matches. Review and add the correct one.":"No match from OCR. Use manual name search.",best.length?"":"error");
- }catch(e){state("Recognition failed: "+e.message+" . Use a photo or manual search.","error")}
- finally{S.scanning=false;}
+  const worker=await getWorker();
+  if(!current(operation))return;
+  await worker.setParameters({tessedit_pageseg_mode:"11",tessedit_char_whitelist:"",tessjs_create_hocr:"0",tessjs_create_tsv:"0"});
+  const header=[0,0,1,.21],footer=[0,.78,1,.22];
+  const plain=await worker.recognize(textRegion(canvas,header),{},{text:true});
+  if(!current(operation))return;
+  const enhanced=await worker.recognize(textRegion(canvas,header,true),{},{text:true});
+  if(!current(operation))return;
+  const foot=await worker.recognize(textRegion(canvas,footer,true),{},{text:true});
+  if(!current(operation))return;
+  let nameText=[plain.data?.text,enhanced.data?.text].join("\n");
+  let parsed=parseText(nameText+"\n"+(foot.data?.text||""));
+  let names=[];
+  try{names=await getNames()}catch{}
+  if(!current(operation))return;
+  let queries=nameQueries(nameText,names);
+  if(!queries.length){
+   const full=await worker.recognize(canvas,{},{text:true});
+   if(!current(operation))return;
+   nameText+="\n"+(full.data?.text||"");
+   parsed=parseText(nameText+"\n"+(foot.data?.text||""));
+   queries=nameQueries(nameText,names);
+  }
+  S.lastText=nameText;
+  if(!queries.length)queries=parsed.queries;
+  if(!queries.length&&!parsed.number){
+   printMatches([]);
+   state("The name and number are unclear. Hold the card steady, reduce glare, or enter them below.","error");
+   return;
+  }
+  const nameInput=document.getElementById("psc-manual"),numberInput=document.getElementById("psc-number");
+  if(nameInput)nameInput.value=queries[0]||"";
+  if(numberInput)numberInput.value=parsed.number;
+  state("Looking for "+(queries[0]||"#"+parsed.number)+"…");
+  const matches=await findMatches(queries,parsed.number,S.abort?.signal);
+  if(!current(operation))return;
+  printMatches(matches,(queries[0]||"Collector number")+(parsed.number?" · #"+parsed.number:""));
+  if(matches.length&&S.auto)auto();
+  state(matches.length?"Possible matches found. Confirm the set and number before adding.":
+    "No matching cards. Correct the detected name or number below and tap Find card.",matches.length?"":"error");
+ }catch(error){if(current(operation))state("Scan could not finish: "+error.message,"error")}
+ finally{S.scanning=false}
 }
 async function capture(){
  if(S.scanning)return;try{await recognize(makeFrame())}catch(e){state(e.message,"error")}
@@ -153,7 +292,7 @@ async function upload(input){
  const file=input?.files?.[0];if(!file)return;
  const url=URL.createObjectURL(file);const img=new Image();img.onload=async()=>{try{const frame=frameFromImage(img);await recognize(frame)}catch(e){state(e.message,"error")}finally{URL.revokeObjectURL(url);input.value=""}};img.onerror=()=>{state("Could not read that image file.","error");URL.revokeObjectURL(url)};img.src=url;
 }
-function clear(){S.candidates=[];printMatches([]);state("Results cleared.");}
+function clear(){S.operation++;S.abort?.abort();S.candidates=[];printMatches([]);state("Results cleared.");}
 async function add(id){
  const card=S.candidates.find(c=>c.id===id);if(!card)return;state("Saving selected card…");
  try{
@@ -174,6 +313,6 @@ const style='<style id="psc-style">.psc-head{border:1px solid #d8e6f9;background
 document.head.insertAdjacentHTML("beforeend",style);
 window.addEventListener("pagehide",stop);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stop()});
-window.PokeScanner={frameArea,render,start,capture,auto,stop,upload,search:manual,clear,add,card:id=>S.candidates.find(c=>c.id===id)};
+window.PokeScanner={parseText,nameQueries,findMatches,textRegion,recognize,frameArea,render,start,capture,auto,stop,upload,search:manual,clear,add,card:id=>S.candidates.find(c=>c.id===id)};
 window.pscStart=start;window.pscCapture=capture;window.pscAuto=auto;window.pscStop=()=>{stop();state("Camera stopped.")};window.pscUpload=upload;window.pscSearch=manual;window.pscClear=clear;window.pscAdd=add;
 })();

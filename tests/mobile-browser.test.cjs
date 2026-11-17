@@ -13,7 +13,7 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
 }, async t => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'pokeledger-chrome-'));
   const server = http.createServer(async (req, res) => {
-    const file = new URL(req.url, 'http://localhost').pathname.match(/^\/pokeledger\/((?:(?:vendor|data\/tcgplayer-prices)\/)?[\w.-]*)$/)?.[1];
+    const file = new URL(req.url, 'http://localhost').pathname.match(/^\/pokeledger\/((?:(?:vendor|data(?:\/tcgplayer-prices)?)\/)?[\w.-]*)$/)?.[1];
     try {
       if (file === undefined || file.startsWith('.')) throw Error();
       if(file==='data/tcgplayer-prices/999.json'){
@@ -80,6 +80,46 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   const manifest=await send('Page.getAppManifest');
   assert.deepEqual(manifest.errors,[]);
   assert.equal(JSON.parse(manifest.data).display,'standalone');
+  await evaluate(`(()=>{
+    nav("scanner");
+    const preview=document.createElement("canvas");preview.width=480;preview.height=672;
+    preview.getContext("2d").fillRect(0,0,480,672);
+    window.scannerTestStream=preview.captureStream(1);
+    navigator.mediaDevices.getUserMedia=async()=>scannerTestStream;
+    const outputs=["PE Moos Chanzard","PE Worn Charzard X","MEP EN 023"];
+    window.scannerTestCalls=[];
+    window.Tesseract={createWorker:async()=>({
+      setParameters:async options=>{window.scannerTestMode=options.tessedit_pageseg_mode},
+      recognize:async()=>({data:{text:outputs.shift()||""}})
+    })};
+    const originalFetch=window.fetch.bind(window);
+    window.fetch=(input,options)=>{
+      const url=new URL(String(input),location.href);
+      if(url.origin==="https://api.tcgdex.net"&&url.pathname.endsWith("/cards")){
+        scannerTestCalls.push(url.searchParams.get("name"));
+        return Promise.resolve({ok:true,json:async()=>[
+          {id:"me02-013",localId:"013",name:"Mega Charizard X ex",image:""},
+          {id:"mep-023",localId:"023",name:"Mega Charizard X ex",image:""}
+        ]});
+      }
+      return originalFetch(input,options);
+    };
+    window.PokeMarket.load=async id=>({id,name:"Mega Charizard X ex",localId:id.split("-")[1],set:{name:"Mega Evolution Promos"},pricing:{tcgplayer:{unit:"USD",updated:new Date().toISOString(),holofoil:{marketPrice:5}}}});
+    document.querySelector('[onclick="pscStart()"]').click();
+  })()`);
+  await waitFor('document.getElementById("psc-video").videoWidth>0');
+  await evaluate('pscAuto()');
+  await waitFor('!!document.querySelector(".psc-item")');
+  assert.equal(await evaluate('PokeScanner.card("mep-023").name'),'Mega Charizard X ex');
+  assert.equal(await evaluate('scannerTestMode'),'11');
+  assert.equal(await evaluate('scannerTestCalls[0]'),'Mega Charizard X ex');
+  assert.equal(await evaluate('document.getElementById("psc-number").value'),'023');
+  assert.equal(await evaluate('document.getElementById("psc-auto").textContent'),'Auto: OFF');
+  assert.equal(await evaluate('db.cards.length'),0,'Recognition requires explicit Add owned');
+  await evaluate('document.querySelector(".psc-item .btn.primary").click()');
+  await waitFor('db.statuses["ex-mep-023"]?.qty===1');
+  await evaluate('nav("dashboard")');
+  assert.equal(await evaluate('scannerTestStream.getTracks()[0].readyState'),'ended');
   const testPrice=await evaluate('PokeMarket.supplement({id:"fixture-1",thirdParty:{tcgplayer:9990001}})');
   assert.equal(testPrice.pricing.tcgplayer.holofoil.marketPrice,2.79);
   const fixture={members:['Fixture'],cards:[],statuses:{},transactions:[],budget:43};
