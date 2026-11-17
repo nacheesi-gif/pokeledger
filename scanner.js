@@ -88,10 +88,10 @@ async function loadCandidatePrices(candidates){
   if(!document.getElementById("psc-price-"+c.id))return;
   try{
    const item=await window.PokeMarket?.load?.(c.id);
-   const price=Object.values(item?.pricing?.tcgplayer||{}).find(v=>v&&typeof v==="object"&&typeof v.marketPrice==="number");
+   const quote=window.PokeGallery.sources(item);
    const element=document.getElementById("psc-price-"+c.id);
-   if(element)element.textContent=price?"Raw market: $"+price.marketPrice.toFixed(2)+" · verify source":"Raw market: unavailable";
-  }catch{const element=document.getElementById("psc-price-"+c.id);if(element)element.textContent="Raw market: unavailable"}
+   if(element){element.textContent=quote.label;element.title=quote.title}
+  }catch{const element=document.getElementById("psc-price-"+c.id);if(element)element.textContent="TCGplayer Market Price unavailable"}
  }));
 }
 function printMatches(list,meta){

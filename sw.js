@@ -1,4 +1,4 @@
-const CACHE='pokeledger-performance-v18';
+const CACHE='pokeledger-performance-v19';
 const SHELL=['./','./index.html','./explore.js','./market.js','./scanner.js','./collections.js','./hauls.js','./gallery.js','./slabs.js','./allcards.js','./restocks.js','./manifest.webmanifest','./icon.svg','./icon-180.png','./icon-192.png','./icon-512.png'];
 const scope = self.registration.scope;
 const shellURLs = new Set(SHELL.map(path => new URL(path, scope).href));

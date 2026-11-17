@@ -5,6 +5,8 @@
 
 - [WO-006](work-orders/WO-006.md) — Phone launch, raster icons, offline shell, camera lifecycle and restore checks. Mobile Chromium regression runs in Actions. Physical device acceptance remains open.
 
+- [WO-007](work-orders/WO-007.md) — Display TCGplayer Market Price per finish, alongside saved values.
+
 ## Next (scoped proposals — not yet implemented)
 - WO-002 — Measure 500-card/1,000-transaction real-device performance, then optimize observed bottlenecks.
 - WO-003 — Audit and test data import/export + cloud conflict handling with known-answer fixtures.
