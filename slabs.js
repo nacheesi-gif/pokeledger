@@ -1,6 +1,6 @@
 (function(){
 "use strict";
-const E=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&#39;",'"':"&quot;"}[c]));
+const E=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
 const graders={
  PSA:["PSA","https://www.psacard.com/cert"],
  CGC:["CGC Cards","https://www.cgccards.com/certlookup/"],
