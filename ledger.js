@@ -187,9 +187,10 @@ function transactionRow(transaction, showProfile = "all") {
   const who = parts.length > 1 ? "Split receipt" : parts[0]?.purpose === RESALE ? "Resale" : transaction.owner || "Me";
   const icon = transaction.kind === "sale" ? "flareon" : transaction.kind === "cashout" ? "umbreon" : who === db.members[0] ? "charizard" : who === "Maz" ? "jolteon" : who === "Lalie" ? "vaporeon" : "eevee";
   const caption = [transaction.merchant || who, transaction.type, transaction.date].filter(Boolean).join(" · ");
-  return '<button type="button" class="ledger-transaction" onclick="' + call("details", transaction.id) + '">' + sprite(icon) +
-    '<span class="transaction-copy"><b>' + E(transaction.title) + '</b><small>' + E(caption) + '</small></span>' +
-    '<strong class="' + (transaction.kind === "sale" ? "positive" : "") + '">' + money(amount) + '</strong></button>';
+  const artwork = window.PokeArtwork?.thumb(transaction) || '';
+  return '<div class="ledger-entry">' + artwork + '<button type="button" class="ledger-transaction" onclick="' + call("details", transaction.id) + '">' + (artwork ? '' : sprite(icon)) +
+    '<span class="transaction-copy"><b>' + E(transaction.title) + '</b>' + (window.PokeArtwork?.badge(transaction.type) || '') + '<small>' + E(caption) + '</small></span>' +
+    '<strong class="' + (transaction.kind === "sale" ? "positive" : "") + '">' + money(amount) + '</strong></button></div>';
 }
 function empty(title, text, button = "Log a purchase", action = "LedgerUI.openReceipt()") {
   return '<div class="ledger-empty"><b>' + title + '</b><p>' + text + '</p><button class="btn primary" onclick="' + action + '">' + button + '</button></div>';
@@ -277,6 +278,7 @@ function openReceipt(id = "", target = "") {
     '<div class="formGrid"><label>Shop / platform<input class="field" name="merchant" placeholder="Whatnot, card shop…" value="' + E(transaction?.merchant||"") + '"></label>' +
     '<label>Purchase type <small>Optional · your own label</small><input class="field" name="type" maxlength="60" placeholder="PSA 10 slab, Raw, Boosters…" value="' + E(transaction?.type||"") + '"></label>' +
     '<label class="span2">Notes <small>Optional</small><textarea class="field" name="notes" rows="2">' + E(transaction?.notes||"") + '</textarea></label></div>' +
+    (window.PokeArtwork?.editor(transaction?.artwork) || '') +
     '<details class="receipt-extra"><summary>Receipt / order link</summary><input class="field" name="receipt" type="url" placeholder="https://…" value="' + E(transaction?.receipt||"") + '"></details>' +
     '<div class="modalFoot"><button class="btn" type="button" onclick="closeModal()">Cancel</button><button class="btn primary" type="submit">Save purchase</button></div></form>');
   recalculate();
@@ -304,6 +306,8 @@ function submitReceipt(form, id = "") {
       .filter(input => Number(input.value) > 0).map(input => ({owner:input.dataset.splitOwner,purpose:input.dataset.splitPurpose,amount:input.value})) :
       [{owner:fields.recipient === "resale" ? db.members[0]||"Me" : fields.recipient,purpose:fields.recipient === "resale" ? RESALE : PERSONAL,amount:fields.amount}];
     const receipt = buildReceipt(fields, allocations), next = clone();
+    const artwork = window.PokeArtwork?.read(form);
+    if (artwork !== undefined) receipt.artwork = artwork;
     if (id) {
       const index = next.transactions.findIndex(row => row.id === id && row.kind === "purchase");
       if (index < 0) throw Error("This purchase no longer exists.");
@@ -378,7 +382,7 @@ function details(id) {
     (knownCost ? money(transaction.amount-(Number(transaction.fees)||0)-(Number(transaction.shipping)||0)-Number(transaction.costBasis)) : "Needs cost basis") + '</b></div>' :
     '<div class="detail-line"><span>Withdrawal requested</span><b>' + money(transaction.grossAmount) + '</b></div><div class="detail-line"><span>Withdrawal fee</span><b>' + money(transaction.fees) + '</b></div>';
   show('<h2>' + E(transaction.title) + '</h2><p class="ledger-help">' + E([transaction.date,transaction.merchant,transaction.type].filter(Boolean).join(" · ")) + '</p>' +
-    '<div class="detail-total">' + money(transaction.amount) + '</div>' + rows +
+    '<div class="detail-total">' + money(transaction.amount) + '</div>' + (window.PokeArtwork?.thumb(transaction) || '') + (window.PokeArtwork?.badge(transaction.type) || '') + rows +
     (transaction.notes ? '<p class="detail-notes">' + E(transaction.notes) + '</p>' : "") +
     (transaction.receipt && /^https?:\/\//i.test(transaction.receipt) ? '<a class="text-button" href="' + E(transaction.receipt) + '" target="_blank" rel="noopener noreferrer">Open receipt ↗</a>' : "") +
     '<div class="modalFoot">' + (transaction.kind === "purchase" ? '<button class="btn" onclick="' + call("openReceipt",id) + '">Edit purchase</button>' : transaction.kind === "sale" ? '<button class="btn" onclick="' + call("editCost",id) + '">Edit cost</button>' : "") +
