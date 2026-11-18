@@ -158,3 +158,4 @@ body.ledger-mode .notice{background:var(--yellow);border:2px solid var(--ink);bo
 .art-zoom .art-card{width:min(100%,350px);margin:auto}.art-zoom.enlarged .art-card{width:600px;max-width:none;margin:0}
 .art-viewer .modalFoot{flex-wrap:wrap}.art-viewer h2{margin-bottom:6px}.art-viewer .ledger-help{font-size:12px}
 @media(max-width:450px){.ledger-entry{gap:9px}.art-thumb{flex-basis:52px;width:52px;min-height:72px}.art-grade{font-size:10px;padding:3px 5px}.art-grade img{width:34px;height:16px}.art-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.transaction-copy .art-grade{align-self:flex-start}.transaction-copy .art-grade b{font-size:inherit}
