@@ -4,6 +4,16 @@ const E = x => String(x ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;'
 const validID = x => typeof x === 'string' && /^[a-zA-Z0-9.+-]{1,80}$/.test(x);
 const results = new WeakMap(), searches = new Map(), details = new Map();
 let controller = null;
+const detailQueue=[];let detailActive=0;
+function detailTask(task) {
+  return new Promise((resolve,reject)=>{detailQueue.push({task,resolve,reject});pumpDetails();});
+}
+function pumpDetails() {
+  while(detailActive<3 && detailQueue.length) {
+    const job=detailQueue.shift();detailActive++;
+    Promise.resolve().then(job.task).then(job.resolve,job.reject).finally(()=>{detailActive--;pumpDetails();});
+  }
+}
 function clean(value) {
   if (!value || !validID(value.id) || typeof value.name !== 'string' || !value.name.trim()) return null;
   if (value.image && (typeof value.image !== 'string' || !/^https:\/\/assets\.tcgdex\.net\/(en|ja)\/[a-zA-Z0-9.+_-]+\/[a-zA-Z0-9.+_-]+\/[a-zA-Z0-9.+_-]+$/.test(value.image)) && !/^https:\/\/tcgplayer-cdn\.tcgplayer\.com\/product\/[1-9][0-9]{0,8}_in_400x400\.jpg$/.test(value.image)) return null;
@@ -33,11 +43,21 @@ function imageURL(card, high = false) {
   return card.image.includes('tcgplayer-cdn.tcgplayer.com/') ? card.image : card.image+(high?'/high.webp':'/low.webp');
 }
 function image(card, high = false) {
-  return '<img class="art-card" src="'+E(imageURL(card,high))+'" alt="'+E(card.name)+'" width="245" height="337" decoding="async" loading="'+(high?'eager':'lazy')+'" referrerpolicy="no-referrer" onerror="PokeArtwork.imageFailed(this)">';
+  return '<img class="art-card" data-card="'+E(JSON.stringify(card))+'" src="'+E(imageURL(card,high))+'" alt="'+E(card.name)+'" width="245" height="337" decoding="async" loading="'+(high?'eager':'lazy')+'" referrerpolicy="no-referrer" onerror="PokeArtwork.imageFailed(this)">';
 }
-function imageFailed(img) {
+async function imageFailed(img) {
   if (img.dataset.fallback) {img.hidden = true;return;}
   img.dataset.fallback = 'yes';
+  let card;
+  try {card=clean(JSON.parse(img.dataset.card));} catch {}
+  if(card?.image.startsWith('https://assets.tcgdex.net/')) {
+    const language=card.image.split('/')[3], active=new AbortController();
+    const timer=setTimeout(()=>active.abort(),10000);
+    try {
+      const [replacement]=await resolveMissing([{...card,image:''}],language,active.signal);
+      if(replacement?.image && img.isConnected) {img.src=replacement.image;img.alt=card.name;return;}
+    } finally {clearTimeout(timer);}
+  }
   img.src = './card-placeholder.svg';
   img.alt = 'Artwork unavailable. Your purchase is saved.';
 }
@@ -110,7 +130,7 @@ async function resolveMissing(cards, language, signal) {
       try {
         let detail=details.get(key);
         if(!detail) {
-          const r=await fetch('https://api.tcgdex.net/v2/'+language+'/cards/'+encodeURIComponent(card.id),{signal,referrerPolicy:'no-referrer'});
+          const r=await detailTask(()=>fetch('https://api.tcgdex.net/v2/'+language+'/cards/'+encodeURIComponent(card.id),{signal,referrerPolicy:'no-referrer'}));
           if(!r.ok) continue;
           detail=await r.json();details.set(key,detail);
           if(details.size>40) details.delete(details.keys().next().value);
