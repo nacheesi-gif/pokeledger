@@ -23,7 +23,7 @@ test('grades parse compact labels and pristine typo, but never infer a grade fro
 });
 test('search is paginated, validates inputs and safely encodes names; HTML remains escaped',()=>{
  const a=app(),url=new URL(a.searchURL('Pikachu & Eevee','TG01','en',2));
- assert.equal(url.searchParams.get('pagination:itemsPerPage'),'12');assert.equal(url.searchParams.get('name'),'like:Pikachu & Eevee');assert.equal(url.searchParams.get('localId'),'TG01');
+ assert.equal(url.searchParams.get('pagination:itemsPerPage'),'12');assert.equal(url.searchParams.get('name'),'like:Pikachu & Eevee');assert.equal(url.searchParams.get('localId'),'1');
  assert.throws(()=>a.searchURL('a','','en',1));assert.throws(()=>a.searchURL('Pikachu','','bad',1));
  const html=a.thumb({id:'" onclick="evil()',artwork:{...card,name:'<img onerror=evil()>'}});
  assert.ok(!html.includes('<img onerror=evil()>'));assert.match(html,/&lt;img/);
@@ -50,4 +50,28 @@ test('artwork cache evicts oldest images at its byte and entry limits',async()=>
  await w.trimArtwork(w.cache);assert.equal(w.entries.size,180);assert.equal(w.entries.has('https://example.test/0'),false);
  w.entries.clear();for(let i=0;i<3;i++)await w.cache.put('https://example.test/'+i,new Response('x',{headers:{'x-pokeledger-bytes':String(10*1024*1024)}}));
  await w.trimArtwork(w.cache);assert.equal(w.entries.size,2);
+});
+
+test('missing artwork remains selectable and uses only an unambiguous standard product mapping',()=>{
+ const a=app(),missing=a.clean({id:'mep-023',name:'Mega Charizard X ex',localId:'023'});
+ assert.ok(missing);assert.equal(missing.image,'');assert.equal(a.imageURL(missing),'./card-placeholder.svg');
+ const detail={id:'mep-023',variants_detailed:[{size:'standard',thirdParty:{tcgplayer:659612}}]};
+ const fixed=a.withProductImage(missing,detail);
+ assert.equal(a.imageURL(fixed),'https://tcgplayer-cdn.tcgplayer.com/product/659612_in_400x400.jpg');
+ assert.equal(a.clean(JSON.parse(JSON.stringify(fixed))).image,fixed.image);
+ assert.equal(a.withProductImage(missing,{...detail,id:'mep-029'}).image,'');
+ assert.equal(a.withProductImage(missing,{...detail,variants_detailed:[...detail.variants_detailed,{size:'standard',thirdParty:{tcgplayer:123}}]}).image,'');
+ assert.equal(a.withProductImage(missing,{...detail,variants_detailed:[{size:'jumbo',thirdParty:{tcgplayer:123}}]}).image,'');
+ assert.equal(a.clean({...fixed,image:fixed.image+'?tracking=1'}),null);
+});
+test('number-only, leading-zero, set-prefix and fraction searches match the actual collector number',()=>{
+ const a=app(),promo={id:'mep-023',localId:'023'};
+ for(const value of ['023','23','#023','MEP 023','023/094']) {
+  assert.equal(a.numberMatches(promo,value),true,value);
+  assert.equal(a.numberMatches({id:'sv03-223',localId:'223'},value),false,value);
+ }
+ assert.equal(a.numberMatches({id:'swsh9tg-TG01',localId:'TG01'},'TG01'),true);
+ assert.equal(a.numberMatches({id:'base1-1',localId:'1'},'TG01'),false);
+ const u=new URL(a.searchURL('','#023','en',1));assert.equal(u.searchParams.get('localId'),'23');assert.equal(u.searchParams.has('name'),false);
+ assert.throws(()=>a.searchURL('','','en',1));
 });

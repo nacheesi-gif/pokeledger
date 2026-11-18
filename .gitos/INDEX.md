@@ -37,3 +37,5 @@
 - [WO-012](work-orders/WO-012.md) — Custom purchase-type field and saved-entry visual walkthrough.
 
 - [WO-013](work-orders/WO-013.md) — Cached card artwork, tap-to-zoom and custom-label grading stickers.
+
+- [WO-014](work-orders/WO-014.md) — Missing artwork fallback and exact collector-number search.
