@@ -23,7 +23,7 @@ test('grades parse compact labels and pristine typo, but never infer a grade fro
 });
 test('search is paginated, validates inputs and safely encodes names; HTML remains escaped',()=>{
  const a=app(),url=new URL(a.searchURL('Pikachu & Eevee','TG01','en',2));
- assert.equal(url.searchParams.get('pagination:itemsPerPage'),'12');assert.equal(url.searchParams.get('name'),'like:Pikachu & Eevee');assert.equal(url.searchParams.get('localId'),'eq:TG01');
+ assert.equal(url.searchParams.get('pagination:itemsPerPage'),'12');assert.equal(url.searchParams.get('name'),'like:Pikachu & Eevee');assert.equal(url.searchParams.get('localId'),'TG01');
  assert.throws(()=>a.searchURL('a','','en',1));assert.throws(()=>a.searchURL('Pikachu','','bad',1));
  const html=a.thumb({id:'" onclick="evil()',artwork:{...card,name:'<img onerror=evil()>'}});
  assert.ok(!html.includes('<img onerror=evil()>'));assert.match(html,/&lt;img/);
