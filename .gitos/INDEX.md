@@ -35,3 +35,5 @@
 - [WO-011](work-orders/WO-011.md) — Charizard for the Me profile, retaining other sprites and saved records.
 
 - [WO-012](work-orders/WO-012.md) — Custom purchase-type field and saved-entry visual walkthrough.
+
+- [WO-013](work-orders/WO-013.md) — Cached card artwork, tap-to-zoom and custom-label grading stickers.

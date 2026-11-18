@@ -85,6 +85,14 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   assert.deepEqual(await evaluate('db.members'),['Me','Maz','Lalie']);
   await evaluate(`LedgerUI.openReceipt();const f=document.getElementById("ledger-receipt-form");f.elements.amount.value="100";f.elements.title.value="Sample shared purchase";f.elements.type.value="CGC Pristine 10";f.elements.recipient.value="split";LedgerUI.recipient("split");const amounts=[20,25,15,40];[...f.querySelectorAll("[data-split-owner]")].forEach((el,i)=>el.value=amounts[i]);LedgerUI.submitReceipt(f)`);
   assert.equal(await evaluate('db.transactions[0].type'),'CGC Pristine 10');
+  await evaluate(`(async()=>{LedgerUI.openReceipt(db.transactions[0].id);document.querySelector('.art-editor').open=true;document.querySelector('.art-query').value='Charizard';window.originalFetch=window.fetch;window.fetch=async()=>({ok:true,json:async()=>[{id:'base1-4',name:'Charizard',localId:'4',image:'https://assets.tcgdex.net/en/base/base1/4'}]});await PokeArtwork.search(document.querySelector('.art-editor .btn'),1);PokeArtwork.choose(document.querySelector('.art-result'),0);LedgerUI.submitReceipt(document.getElementById('ledger-receipt-form'),db.transactions[0].id);window.fetch=window.originalFetch})()`);
+  assert.equal(await evaluate('db.transactions[0].artwork.id'),'base1-4');
+  assert.equal(await evaluate('document.querySelectorAll(".art-thumb").length'),1);
+  assert.equal(await evaluate('document.querySelector(".art-thumb").click();document.querySelector(".art-viewer .art-card").src'),'https://assets.tcgdex.net/en/base/base1/4/high.webp');
+  await evaluate('PokeArtwork.zoom(document.querySelector(".art-viewer .btn"))');
+  assert.equal(await evaluate('document.querySelector(".art-zoom").classList.contains("enlarged")'),true);
+  await evaluate('closeModal()');
+
   await evaluate('LedgerUI.openReceipt(db.transactions[0].id)');
   assert.equal(await evaluate(`document.querySelector('[name=type]').tagName`),'INPUT');
   assert.equal(await evaluate(`document.querySelector('[name=type]').value`),'CGC Pristine 10');
@@ -96,6 +104,7 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   await send('Page.reload');
   await waitFor('typeof db!=="undefined" && db.transactions.length===1');
   assert.equal(await evaluate('db.transactions[0].type'),'CGC Pristine 10');
+  assert.equal(await evaluate('db.transactions[0].artwork.id'),'base1-4');
   assert.deepEqual(await evaluate('db.members'),['Me','Maz saved','Lalie']);
   assert.equal(await evaluate('db.transactions[0].allocations[1].owner'),'Maz saved');
   await evaluate('window.prompt=()=>"Maz";LedgerUI.renameProfile("Maz saved")');
