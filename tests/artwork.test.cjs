@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-function app(){const window={};vm.runInNewContext(fs.readFileSync('artwork.js','utf8'),{window,URLSearchParams});return window.PokeArtwork;}
+function app(extra={}){const window={};vm.runInNewContext(fs.readFileSync('artwork.js','utf8'),{window,URLSearchParams,...extra});return window.PokeArtwork;}
 const card={id:'base1-4',name:'Charizard',localId:'4',image:'https://assets.tcgdex.net/en/base/base1/4'};
 test('artwork accepts an exact catalog reference; rejects untrusted and malformed image URLs',()=>{
  const a=app(),c=a.clean(card);assert.equal(c.number,'4');assert.equal(c.setId,'base1');
@@ -74,4 +74,15 @@ test('number-only, leading-zero, set-prefix and fraction searches match the actu
  assert.equal(a.numberMatches({id:'base1-1',localId:'1'},'TG01'),false);
  const u=new URL(a.searchURL('','#023','en',1));assert.equal(u.searchParams.get('localId'),'23');assert.equal(u.searchParams.has('name'),false);
  assert.throws(()=>a.searchURL('','','en',1));
+});
+
+test('broken provider images recover once through exact products; failures retain a placeholder',async()=>{
+ let calls=0,active=0,peak=0;
+ const a=app({AbortController,setTimeout,clearTimeout,fetch:async()=>{calls++;active++;peak=Math.max(peak,active);await new Promise(r=>setTimeout(r,2));active--;return {ok:true,json:async()=>({id:'base1-4',variants_detailed:[{size:'standard',thirdParty:{tcgplayer:123}}]})};}});
+ const images=Array.from({length:6},()=>({dataset:{card:JSON.stringify(card)},isConnected:true}));
+ await Promise.all(images.map(img=>a.imageFailed(img)));
+ assert.ok(peak<=3);assert.equal(images[0].src,'https://tcgplayer-cdn.tcgplayer.com/product/123_in_400x400.jpg');
+ const before=calls;await a.imageFailed(images[0]);assert.equal(calls,before);assert.equal(images[0].hidden,true);
+ const bad=app({AbortController,setTimeout,clearTimeout,fetch:async()=>{throw Error('offline');}});
+ const img={dataset:{card:JSON.stringify(card)},isConnected:true};await bad.imageFailed(img);assert.equal(img.src,'./card-placeholder.svg');
 });
