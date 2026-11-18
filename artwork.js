@@ -74,7 +74,7 @@ function searchURL(name, number, language, page) {
   name = String(name||'').trim(); number = String(number||'').trim();
   if (name.length<2 || name.length>80 || number.length>20) throw Error('Enter at least two characters of the card name.');
   const params = new URLSearchParams({name:'like:'+name,'pagination:page':String(page),'pagination:itemsPerPage':'12'});
-  if (number) params.set('localId','eq:'+number);
+  if (number) params.set('localId',number);
   return 'https://api.tcgdex.net/v2/'+language+'/cards?'+params;
 }
 async function search(button, page) {
