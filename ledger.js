@@ -168,8 +168,14 @@ function welcome() {
     '<button id="ledger-begin" class="btn primary" onclick="LedgerUI.begin()">' + (original ? "Back up & start fresh" : "Start my spending ledger") + '</button>' +
     '<small>Open from the same home-screen icon each time to continue your saved ledger.</small></section>';
 }
+function profileIcon(name) {
+  const chosen = db.profileSprites?.[name];
+  if (SPRITE_NAMES.includes(chosen)) return chosen;
+  const index = db.members.indexOf(name);
+  return index < 0 ? "gyarados" : ["charizard","jolteon","vaporeon","flareon"][index % 4];
+}
 function profileCards() {
-  const cards = db.members.map((name, index) => ({key:"person:"+name, label:name, icon:["charizard","jolteon","vaporeon","flareon"][index % 4], color:["yellow","blue","pink","mint"][index % 4]}));
+  const cards = db.members.map((name, index) => ({key:"person:"+name, label:name, icon:profileIcon(name), color:["yellow","blue","pink","mint"][index % 4]}));
   cards.push({key:"resale", label:"Resale", icon:"umbreon", color:"mint"});
   return '<div class="ledger-profiles">' + cards.map(card => {
     const rows = selectedPurchases(card.key);
@@ -195,7 +201,7 @@ function transactionRow(transaction, showProfile = "all") {
   const amount = transaction.kind === "purchase" ? amountFor(transaction, showProfile) : Number(transaction.amount) || 0;
   const parts = transaction.kind === "purchase" ? expenseParts(transaction) : [];
   const who = parts.length > 1 ? "Split receipt" : parts[0]?.purpose === RESALE ? "Resale" : transaction.owner || "Me";
-  const icon = (transaction.kind !== "cashout" && speciesSprite(transaction.artwork?.name || transaction.title)) || (transaction.kind === "sale" ? "flareon" : transaction.kind === "cashout" ? "umbreon" : who === db.members[0] ? "charizard" : who === "Maz" ? "jolteon" : who === "Lalie" ? "vaporeon" : "gyarados");
+  const icon = (transaction.kind !== "cashout" && speciesSprite(transaction.artwork?.name || transaction.title)) || (transaction.kind === "sale" ? "flareon" : transaction.kind === "cashout" ? "umbreon" : parts.length === 1 && parts[0].purpose !== RESALE ? profileIcon(parts[0].owner || who) : "gyarados");
   const caption = [transaction.merchant || who, transaction.type, transaction.date].filter(Boolean).join(" · ");
   const artwork = window.PokeArtwork?.thumb(transaction) || '';
   return '<div class="ledger-entry">' + artwork + '<button type="button" class="ledger-transaction" onclick="' + call("details", transaction.id) + '">' + (artwork ? '' : sprite(icon)) +
@@ -308,8 +314,8 @@ function settings() {
     '</small><div class="ledger-action-grid"><button class="btn primary" onclick="exportJSON()">Export backup JSON</button><button class="btn" onclick="importDialog()">Import backup</button></div>' +
     '<button class="text-button" onclick="exportCSV()">Export transactions CSV →</button>' +
     (previousData() ? '<div class="previous-backup"><b>Previous PokéLedger records</b><p>Your copy from before the fresh start is available here.</p><button class="btn" onclick="LedgerUI.exportPrevious()">Download previous backup</button></div>' : "") +
-    '</section><section class="ledger-panel"><h2>YOUR PEOPLE</h2>' + db.members.map((name,index) => '<div class="profile-setting">' + sprite(["charizard","jolteon","vaporeon"][index%3]) +
-    '<b>' + E(name) + '</b><button class="text-button" onclick="' + call("renameProfile", name) + '">Rename</button></div>').join("") +
+    '</section><section class="ledger-panel"><h2>YOUR PEOPLE</h2>' + db.members.map(name => '<div class="profile-setting">' + sprite(profileIcon(name)) +
+    '<b>' + E(name) + '</b><button class="text-button" onclick="' + call("renameProfile", name) + '">Edit</button></div>').join("") +
     '<button class="text-button" onclick="LedgerUI.addProfile()">+ Add profile</button></section>' +
     '<section class="ledger-panel"><div class="ledger-section-head"><h2>MONTHLY BUDGETS</h2><button class="btn" onclick="LedgerUI.openBudgets()">Edit budgets</button></div><p>Personal + kids ' +
     money(db.budgets.hobby) + ' · Resale ' + money(db.budgets.resale) + '</p></section>' +
@@ -395,12 +401,28 @@ function submitBudgets(form) {
   } catch(error) { alert(error.message); }
 }
 function renameProfile(old) {
-  const answer = prompt("Profile name", old);
-  if (answer === null) return;
-  const newer = answer.trim().slice(0,45);
-  if (!newer || newer === old) return;
-  if (db.members.some(name => name.toLowerCase() === newer.toLowerCase())) return alert("Another profile already uses that name.");
+  const current = profileIcon(old);
+  const options = [...SPRITE_NAMES].sort().map(name =>
+    '<option value="' + name + '"' + (name === current ? ' selected' : '') + '>' +
+    name[0].toUpperCase() + name.slice(1) + '</option>').join('');
+  show('<h2>Edit profile</h2><form onsubmit="event.preventDefault();LedgerUI.saveProfile(this,' + E(JSON.stringify(old)) + ')">' +
+    '<label>Profile name<input class="field" name="label" maxlength="45" required value="' + E(old) + '"></label>' +
+    '<label>Pokémon sprite<select class="field" name="species" onchange="LedgerUI.previewProfile(this)">' + options + '</select></label>' +
+    '<div class="profile-preview">' + sprite(current) + '</div><div class="modalFoot">' +
+    '<button type="button" class="btn" onclick="closeModal()">Cancel</button><button class="btn primary">Save profile</button></div></form>');
+}
+function previewProfile(select) {
+  select.form.querySelector(".profile-preview").innerHTML = sprite(select.value);
+}
+function saveProfile(form, old) {
+  const newer = form.elements.label.value.trim();
+  const chosen = form.elements.species.value;
+  if (!db.members.includes(old) || !newer || newer.length > 45 || !SPRITE_NAMES.includes(chosen)) return alert("Choose a valid name and sprite.");
+  if (db.members.some(name => name !== old && name.toLowerCase() === newer.toLowerCase())) return alert("Another profile already uses that name.");
   const next = clone();
+  next.profileSprites = {...next.profileSprites};
+  delete next.profileSprites[old];
+  Object.defineProperty(next.profileSprites, newer, {value:chosen, enumerable:true, configurable:true, writable:true});
   next.members = next.members.map(name => name === old ? newer : name);
   for (const transaction of next.transactions) {
     if (transaction.owner === old) transaction.owner = newer;
@@ -408,7 +430,9 @@ function renameProfile(old) {
   }
   for (const row of Object.values(next.statuses)) if (row.owner === old) row.owner = newer;
   for (const binder of next.binders || []) if (binder.owner === old) binder.owner = newer;
-  if (write(next) && preferences().profile === "person:"+old) { preferences().profile = "person:"+newer; remember(); }
+  if (!write(next)) return;
+  if (preferences().profile === "person:"+old) { preferences().profile = "person:"+newer; remember(); }
+  closeModal();
 }
 function addProfile() {
   const answer = prompt("Profile name");
@@ -468,7 +492,7 @@ function remove(id) {
 }
 window.LedgerUI = {
   render:renderPage,startPage,rememberPage,begin,exportPrevious,setScope,setMonth,selectProfile,
-  openReceipt,submitReceipt,recipient,recalculate,openBudgets,submitBudgets,renameProfile,addProfile,
+  openReceipt,submitReceipt,recipient,recalculate,openBudgets,submitBudgets,renameProfile,previewProfile,saveProfile,addProfile,
   speciesSprite,sprite,cashFlow,buildCashout,openCashout,submitCashout,details,remove,editCost,saveCost,buildReceipt,cents,selectedPurchases,sumRows,write
 };
 })();
