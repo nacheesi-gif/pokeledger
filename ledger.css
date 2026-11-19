@@ -159,3 +159,7 @@ body.ledger-mode .notice{background:var(--yellow);border:2px solid var(--ink);bo
 .art-viewer .modalFoot{flex-wrap:wrap}.art-viewer h2{margin-bottom:6px}.art-viewer .ledger-help{font-size:12px}
 @media(max-width:450px){.ledger-entry{gap:9px}.art-thumb{flex-basis:52px;width:52px;min-height:72px}.art-grade{font-size:10px;padding:3px 5px}.art-grade img{width:34px;height:16px}.art-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .transaction-copy .art-grade{align-self:flex-start}.transaction-copy .art-grade b{font-size:inherit}
+
+.cashflow-total{display:block;font-size:clamp(28px,7vw,48px);margin:14px 0;overflow-wrap:anywhere}.cashflow-panel .ledger-stats{margin:12px 0}.cashflow-panel .ledger-section-head{flex-wrap:wrap}
+
+.gen3-atlas{display:inline-block;background-image:url("./sprites-gen3.png");background-size:2000% 2000%;background-repeat:no-repeat;flex-shrink:0}

@@ -39,3 +39,5 @@
 - [WO-013](work-orders/WO-013.md) — Cached card artwork, tap-to-zoom and custom-label grading stickers.
 
 - [WO-014](work-orders/WO-014.md) — Missing artwork fallback and exact collector-number search.
+
+- [WO-015](work-orders/WO-015.md) — Editable cashouts, overall cash P&L and matching Gen3 sprites.

@@ -108,8 +108,18 @@ function sumRows(rows, profile = "all") {
   return rows.reduce((sum, transaction) => sum + Math.round(amountFor(transaction, profile) * 100), 0) / 100;
 }
 function call(method, argument) { return E("LedgerUI." + method + "(" + JSON.stringify(argument) + ")"); }
-const CHARIZARD_ICON = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgBAMAAACBVGfHAAAAG1BMVEVKnDlBQUFiSs1iYlq9pEHVYkH2lCn29in///9uqozKAAAAAXRSTlMAQObYZgAAANJJREFUKFPVy0FqwzAUhOFf6AJ6BomuBd27ODa9hjBjunVBrycoWXeRe2fhpk16g87qvY8Z+AcxS4+/1I4rJOJE0PbxeVRKYvHJTH7+AXMvblp2gLAT9lmlusX2DaVFtVq7KQHlxXpitqFW5QSUXpphslprGyG4+yyThqHW5wTBvUva/L1Ws6ORW97cfTZphLztlxbkZcnKKwSXXRK5ffUbdBlhLd6kNgK5G0Q9KUsrQDCAudnqBwAQ19N5cY2/ME2npd8BEKe7BQCvb38gTg+LW65F6zDfDvWrhwAAAABJRU5ErkJggg==";
-function sprite(name, className = "") { return '<span class="ledger-sprite ' + className + '">' + (name === 'charizard' ? '<img class="spriteIcon" src="' + CHARIZARD_ICON + '" alt="" width="32" height="32" decoding="async">' : gen3Sprite(name)) + '</span>'; }
+// Matching generation-iii icon atlas; provenance and build script in scripts/sync_sprites.py.
+const SPRITE_NAMES = ["bulbasaur","ivysaur","venusaur","charmander","charmeleon","charizard","squirtle","wartortle","blastoise","caterpie","metapod","butterfree","weedle","kakuna","beedrill","pidgey","pidgeotto","pidgeot","rattata","raticate","spearow","fearow","ekans","arbok","pikachu","raichu","sandshrew","sandslash","nidoran-f","nidorina","nidoqueen","nidoran-m","nidorino","nidoking","clefairy","clefable","vulpix","ninetales","jigglypuff","wigglytuff","zubat","golbat","oddish","gloom","vileplume","paras","parasect","venonat","venomoth","diglett","dugtrio","meowth","persian","psyduck","golduck","mankey","primeape","growlithe","arcanine","poliwag","poliwhirl","poliwrath","abra","kadabra","alakazam","machop","machoke","machamp","bellsprout","weepinbell","victreebel","tentacool","tentacruel","geodude","graveler","golem","ponyta","rapidash","slowpoke","slowbro","magnemite","magneton","farfetchd","doduo","dodrio","seel","dewgong","grimer","muk","shellder","cloyster","gastly","haunter","gengar","onix","drowzee","hypno","krabby","kingler","voltorb","electrode","exeggcute","exeggutor","cubone","marowak","hitmonlee","hitmonchan","lickitung","koffing","weezing","rhyhorn","rhydon","chansey","tangela","kangaskhan","horsea","seadra","goldeen","seaking","staryu","starmie","mr-mime","scyther","jynx","electabuzz","magmar","pinsir","tauros","magikarp","gyarados","lapras","ditto","eevee","vaporeon","jolteon","flareon","porygon","omanyte","omastar","kabuto","kabutops","aerodactyl","snorlax","articuno","zapdos","moltres","dratini","dragonair","dragonite","mewtwo","mew","chikorita","bayleef","meganium","cyndaquil","quilava","typhlosion","totodile","croconaw","feraligatr","sentret","furret","hoothoot","noctowl","ledyba","ledian","spinarak","ariados","crobat","chinchou","lanturn","pichu","cleffa","igglybuff","togepi","togetic","natu","xatu","mareep","flaaffy","ampharos","bellossom","marill","azumarill","sudowoodo","politoed","hoppip","skiploom","jumpluff","aipom","sunkern","sunflora","yanma","wooper","quagsire","espeon","umbreon","murkrow","slowking","misdreavus","unown","wobbuffet","girafarig","pineco","forretress","dunsparce","gligar","steelix","snubbull","granbull","qwilfish","scizor","shuckle","heracross","sneasel","teddiursa","ursaring","slugma","magcargo","swinub","piloswine","corsola","remoraid","octillery","delibird","mantine","skarmory","houndour","houndoom","kingdra","phanpy","donphan","porygon2","stantler","smeargle","tyrogue","hitmontop","smoochum","elekid","magby","miltank","blissey","raikou","entei","suicune","larvitar","pupitar","tyranitar","lugia","ho-oh","celebi","treecko","grovyle","sceptile","torchic","combusken","blaziken","mudkip","marshtomp","swampert","poochyena","mightyena","zigzagoon","linoone","wurmple","silcoon","beautifly","cascoon","dustox","lotad","lombre","ludicolo","seedot","nuzleaf","shiftry","taillow","swellow","wingull","pelipper","ralts","kirlia","gardevoir","surskit","masquerain","shroomish","breloom","slakoth","vigoroth","slaking","nincada","ninjask","shedinja","whismur","loudred","exploud","makuhita","hariyama","azurill","nosepass","skitty","delcatty","sableye","mawile","aron","lairon","aggron","meditite","medicham","electrike","manectric","plusle","minun","volbeat","illumise","roselia","gulpin","swalot","carvanha","sharpedo","wailmer","wailord","numel","camerupt","torkoal","spoink","grumpig","spinda","trapinch","vibrava","flygon","cacnea","cacturne","swablu","altaria","zangoose","seviper","lunatone","solrock","barboach","whiscash","corphish","crawdaunt","baltoy","claydol","lileep","cradily","anorith","armaldo","feebas","milotic","castform","kecleon","shuppet","banette","duskull","dusclops","tropius","chimecho","absol","wynaut","snorunt","glalie","spheal","sealeo","walrein","clamperl","huntail","gorebyss","relicanth","luvdisc","bagon","shelgon","salamence","beldum","metang","metagross","regirock","regice","registeel","latias","latios","kyogre","groudon","rayquaza","jirachi","deoxys"];
+const spriteText = value => String(value||'').toLowerCase().replace(/[’']/g,'').replace(/♀/g,' f ').replace(/♂/g,' m ').replace(/[^a-z0-9]+/g,' ').trim();
+const spriteWords = SPRITE_NAMES.map((name,index)=>({name,id:index+1,words:spriteText(name)})).sort((a,b)=>b.words.length-a.words.length);
+function speciesSprite(title) {
+  const words=' '+spriteText(title)+' ';
+  return spriteWords.find(item=>words.includes(' '+item.words+' '))?.name || '';
+}
+function sprite(name, className = '') {
+  const id=SPRITE_NAMES.indexOf(name)+1 || 130,index=id-1;
+  return '<span class="ledger-sprite '+E(className)+'"><span class="spriteIcon gen3-atlas" aria-hidden="true" data-species="'+id+'" style="background-position:'+((index%20)/19*100)+'% '+(Math.floor(index/20)/19*100)+'%"></span></span>';
+}
 function header() {
   return '<header class="ledger-header"><div class="brand">Poké<em>Ledger</em></div>' +
     '<button type="button" class="save-chip" onclick="nav(\'settings\')" title="Phone storage and backups">' +
@@ -117,7 +127,7 @@ function header() {
 }
 function navigation(active) {
   const items = [
-    ["dashboard","eevee","Home"], ["spending","vaporeon","History"],
+    ["dashboard","gyarados","Home"], ["spending","vaporeon","History"],
     ["add","jolteon","Add"], ["sales","flareon","Resale"], ["settings","umbreon","Settings"]
   ];
   return '<nav class="ledger-nav" aria-label="Main navigation">' + items.map(([key, icon, label]) =>
@@ -151,7 +161,7 @@ function errorPanel() {
 function welcome() {
   const original = previousData();
   return header() + '<section class="ledger-welcome"><div><h1>YOUR<br>SPENDING<br>LEDGER.</h1><p>A fresh ledger for you, Maz, Lalie, and resale.</p></div>' +
-    '<div class="welcome-mascot">' + sprite("eevee") + '</div></section><section class="ledger-panel welcome-start">' +
+    '<div class="welcome-mascot">' + sprite("gyarados") + '</div></section><section class="ledger-panel welcome-start">' +
     '<h2>READY FOR A FRESH START?</h2><p>' + (original ?
       'Download your previous PokéLedger records, then start your spending ledger at $0. Your previous copy stays available in Settings.' :
       'Your purchases, names, budgets, and sales will save automatically on this phone.') + '</p>' +
@@ -185,7 +195,7 @@ function transactionRow(transaction, showProfile = "all") {
   const amount = transaction.kind === "purchase" ? amountFor(transaction, showProfile) : Number(transaction.amount) || 0;
   const parts = transaction.kind === "purchase" ? expenseParts(transaction) : [];
   const who = parts.length > 1 ? "Split receipt" : parts[0]?.purpose === RESALE ? "Resale" : transaction.owner || "Me";
-  const icon = transaction.kind === "sale" ? "flareon" : transaction.kind === "cashout" ? "umbreon" : who === db.members[0] ? "charizard" : who === "Maz" ? "jolteon" : who === "Lalie" ? "vaporeon" : "eevee";
+  const icon = (transaction.kind !== "cashout" && speciesSprite(transaction.artwork?.name || transaction.title)) || (transaction.kind === "sale" ? "flareon" : transaction.kind === "cashout" ? "umbreon" : who === db.members[0] ? "charizard" : who === "Maz" ? "jolteon" : who === "Lalie" ? "vaporeon" : "gyarados");
   const caption = [transaction.merchant || who, transaction.type, transaction.date].filter(Boolean).join(" · ");
   const artwork = window.PokeArtwork?.thumb(transaction) || '';
   return '<div class="ledger-entry">' + artwork + '<button type="button" class="ledger-transaction" onclick="' + call("details", transaction.id) + '">' + (artwork ? '' : sprite(icon)) +
@@ -195,14 +205,65 @@ function transactionRow(transaction, showProfile = "all") {
 function empty(title, text, button = "Log a purchase", action = "LedgerUI.openReceipt()") {
   return '<div class="ledger-empty"><b>' + title + '</b><p>' + text + '</p><button class="btn primary" onclick="' + action + '">' + button + '</button></div>';
 }
+function cashFlow(transactions = db.transactions) {
+  let spent=0, sales=0, payouts=0, transfers=0;
+  const amount=value=>Math.round((Number(value)||0)*100);
+  for(const row of transactions) {
+    if(row.kind==='purchase') spent+=amount(row.amount);
+    else if(row.kind==='sale') sales+=amount(row.amount)-amount(row.fees)-amount(row.shipping);
+    else if(row.kind==='cashout') {
+      if(row.cashflowMode==='sale-transfer') transfers+=amount(row.amount);
+      else payouts+=amount(row.amount);
+    }
+  }
+  return {spent:spent/100,sales:sales/100,payouts:payouts/100,transfers:transfers/100,pnl:(sales+payouts-spent)/100};
+}
+function cashFlowPanel() {
+  const flow=cashFlow();
+  return '<section class="ledger-panel cashflow-panel"><div class="ledger-section-head"><h2>OVERALL CASH P&amp;L</h2><span>All time</span></div><strong class="cashflow-total '+(flow.pnl<0?'negative':'positive')+'">'+money(flow.pnl)+'</strong><div class="ledger-stats"><div><span>Net resale proceeds</span><b>'+money(flow.sales)+'</b></div><div><span>Payouts received</span><b>'+money(flow.payouts)+'</b></div><div><span>Overall spending</span><b>'+money(flow.spent)+'</b></div></div><p class="ledger-help">Resales after fees and shipping + payouts − all purchases, including personal, family and resale spending. Unsold card values are excluded.</p><p class="ledger-help">Cashouts count as payouts unless marked already included in a sale.'+(flow.transfers?' '+money(flow.transfers)+' in sale transfers excluded.':'')+'</p></section>';
+}
+function buildCashout(fields, original = null) {
+  const gross=cents(fields.grossAmount),net=cents(fields.amount);
+  if(!String(fields.merchant||'').trim()) throw Error('Enter the platform or app.');
+  if(gross<=0 || net>gross) throw Error('Received cannot exceed requested, and requested must be above $0.');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(fields.date||'') || !Number.isFinite(Date.parse(fields.date+'T00:00:00Z')) || new Date(fields.date+'T00:00:00Z').toISOString().slice(0,10)!==fields.date) throw Error('Choose a valid cashout date.');
+  if(!db.members.includes(fields.owner) && fields.owner!==original?.owner) throw Error('Choose an existing profile.');
+  if(!['payout','sale-transfer'].includes(fields.cashflowMode)) throw Error('Choose how this cashout counts toward P&L.');
+  return {...(original||{}),id:original?.id||uid(),kind:'cashout',title:String(fields.merchant).trim()+' cashout',type:original?.type||'Platform cashout',purpose:original?.purpose||'Transfer',merchant:String(fields.merchant).trim(),date:fields.date,owner:fields.owner,destination:String(fields.destination||'').trim(),notes:String(fields.notes||'').trim(),amount:net/100,grossAmount:gross/100,fees:(gross-net)/100,cashflowMode:fields.cashflowMode};
+}
+function openCashout(id = '') {
+  const row=id?db.transactions.find(t=>t.id===id && t.kind==='cashout'):null;
+  if(id && !row) return alert('This cashout no longer exists.');
+  const members=[...new Set([...db.members,...(row?.owner?[row.owner]:[])])];
+  show('<h2>'+(row?'EDIT CASHOUT':'LOG CASHOUT')+'</h2><form id="ledger-cashout-form" onsubmit="event.preventDefault();LedgerUI.submitCashout(this,'+E(JSON.stringify(id))+')"><div class="formGrid">'+
+  '<label>Platform / app<input class="field" name="merchant" required value="'+E(row?.merchant||'LastPack')+'"></label><label>Cashout date<input class="field" name="date" type="date" required value="'+E(row?.date||today())+'"></label>'+
+  '<label>Withdrawal requested ($)<input class="field" name="grossAmount" type="number" inputmode="decimal" min="0.01" step="0.01" required value="'+E(row?(row.grossAmount??Number(row.amount)+Number(row.fees||0)):'')+'"></label>'+
+  '<label>Amount actually received ($)<input class="field" name="amount" type="number" inputmode="decimal" min="0" step="0.01" required value="'+E(row?.amount??'')+'"></label>'+
+  '<label>Received through<input class="field" name="destination" value="'+E(row?.destination||'')+'" placeholder="PayPal, bank…"></label><label>Who received it?<select class="field" name="owner">'+members.map(name=>'<option value="'+E(name)+'"'+(name===(row?.owner||members[0])?' selected':'')+'>'+E(name)+'</option>').join('')+'</select></label>'+
+  '<label class="span2">How should this count toward P&amp;L?<select class="field" name="cashflowMode"><option value="payout"'+(row?.cashflowMode!=='sale-transfer'?' selected':'')+'>Payout — not already recorded as a sale</option><option value="sale-transfer"'+(row?.cashflowMode==='sale-transfer'?' selected':'')+'>Already included in a sale — transfer only</option></select></label>'+
+  '<label class="span2">Notes (optional)<textarea class="field" name="notes" rows="2">'+E(row?.notes||'')+'</textarea></label></div><p class="ledger-help">The fee is requested minus received. Transfers already included in sales do not add income again; include any extra withdrawal fee in the recorded sale fees.</p><div class="modalFoot"><button class="btn" type="button" onclick="closeModal()">Cancel</button><button class="btn primary" type="submit">Save cashout</button></div></form>');
+}
+function submitCashout(form,id = '') {
+  try {
+    const original=id?db.transactions.find(t=>t.id===id && t.kind==='cashout'):null;
+    if(id && !original) throw Error('This cashout no longer exists.');
+    const row=buildCashout(Object.fromEntries(new FormData(form)),original);
+    const duplicate=db.transactions.some(t=>t.kind==='cashout'&&t.id!==id&&t.date===row.date&&String(t.merchant||'').toLowerCase()===row.merchant.toLowerCase()&&Number(t.amount)===row.amount&&Number(t.grossAmount)===row.grossAmount);
+    if(duplicate&&!confirm('A matching cashout already exists on this date. Save another?')) return;
+    const next=clone();
+    if(id) next.transactions[next.transactions.findIndex(t=>t.id===id)]=row;
+    else next.transactions.push(row);
+    if(write(next)) closeModal();
+  } catch(error) {alert(error.message);}
+}
 function overview() {
   const rows = selectedPurchases(), total = sumRows(rows);
   const recent = [...rows].sort((a,b) => b.date.localeCompare(a.date)).slice(0,5);
   const finances = metrics();
   return '<div class="ledger-heading"><h1>SPENDING.</h1>' + scopePicker() + '</div>' +
     '<section class="spending-hero"><div><span>Total spent · ' + E(periodLabel()) + '</span><strong>' + money(total) +
-    '</strong><small>' + rows.length + ' purchases recorded</small></div>' + sprite("eevee","hero-sprite") + '</section>' +
-    profileCards() + budgetRows() +
+    '</strong><small>' + rows.length + ' purchases recorded</small></div>' + sprite("gyarados","hero-sprite") + '</section>' +
+    profileCards() + cashFlowPanel() + budgetRows() +
     '<section class="ledger-profit-strip"><div><span>Realized sales profit</span><b>' + money(finances.realized) +
     '</b></div><button class="text-button" onclick="nav(\'sales\')">View resale →</button></section>' +
     '<section class="ledger-panel"><div class="ledger-section-head"><h2>RECENT PURCHASES</h2><button class="text-button" onclick="nav(\'spending\')">View all</button></div>' +
@@ -230,7 +291,7 @@ function resale() {
     '</strong><small>' + finances.knownSales + ' sales with recorded costs' + (finances.unknownSales ? ' · ' + finances.unknownSales + ' need a cost' : "") + '</small></section>' +
     '<div class="ledger-stats"><div><span>Resale spending</span><b>' + money(finances.resaleSpent) + '</b></div><div><span>Gross sales</span><b>' +
     money(finances.gross) + '</b></div><div><span>Net sale proceeds</span><b>' + money(finances.netSales) + '</b></div></div>' +
-    '<div class="ledger-action-grid"><button class="btn primary" onclick="openSale()">+ Record sale</button><button class="btn" onclick="openCashout()">Log cashout</button></div>' +
+    '<div class="ledger-action-grid"><button class="btn primary" onclick="openSale()">+ Record sale</button><button class="btn" onclick="LedgerUI.openCashout()">Log cashout</button></div>' +
     '<section class="ledger-panel"><div class="ledger-section-head"><h2>SALES</h2></div>' +
     (sales.length ? sales.map(row => transactionRow(row)).join("") : empty("No sales yet.", "Record the sale, actual cost, fees, and shipping.", "Record a sale", "openSale()")) + '</section>' +
     '<section class="ledger-panel"><div class="ledger-section-head"><h2>RECORDED COST BASIS</h2><button class="text-button" onclick="openPurchase()">+ Itemized purchase</button></div>' +
@@ -238,7 +299,7 @@ function resale() {
       (status(card.id).unitCost === null || status(card.id).unitCost === undefined ? "Cost unknown" : money(status(card.id).unitCost) + ' each') + '</strong></div>').join("") :
       '<p class="ledger-help">Itemize a purchase to use its recorded unit cost automatically on a sale. You can also enter a sale’s actual cost manually.</p>') + '</section>' +
     '<section class="ledger-panel"><div class="ledger-section-head"><h2>PLATFORM CASHOUTS</h2><b>' + money(finances.cashoutNet) + '</b></div>' +
-    '<p class="ledger-help">Transfers are tracked separately from sales profit. Recorded withdrawal fees: ' + money(finances.cashoutFees) + '.</p>' +
+    '<p class="ledger-help">Tap an entry to edit it. Cashouts count toward overall cash P&amp;L unless marked already included in a sale. Recorded withdrawal fees: ' + money(finances.cashoutFees) + '.</p>' +
     (cashouts.length ? cashouts.map(row => transactionRow(row)).join("") : '<p class="ledger-help">Log a withdrawal when money arrives from a platform.</p>') + '</section>';
 }
 function settings() {
@@ -380,12 +441,12 @@ function details(id) {
     transaction.kind === "sale" ? '<div class="detail-line"><span>Fees</span><b>' + money(transaction.fees) + '</b></div><div class="detail-line"><span>Seller shipping</span><b>' + money(transaction.shipping) +
     '</b></div><div class="detail-line"><span>Actual cost</span><b>' + (knownCost ? money(transaction.costBasis) : "Unknown") + '</b></div><div class="detail-line"><span>Realized profit</span><b>' +
     (knownCost ? money(transaction.amount-(Number(transaction.fees)||0)-(Number(transaction.shipping)||0)-Number(transaction.costBasis)) : "Needs cost basis") + '</b></div>' :
-    '<div class="detail-line"><span>Withdrawal requested</span><b>' + money(transaction.grossAmount) + '</b></div><div class="detail-line"><span>Withdrawal fee</span><b>' + money(transaction.fees) + '</b></div>';
+    '<div class="detail-line"><span>Withdrawal requested</span><b>' + money(transaction.grossAmount) + '</b></div><div class="detail-line"><span>Withdrawal fee</span><b>' + money(transaction.fees) + '</b></div><div class="detail-line"><span>Cash P&amp;L</span><b>' + (transaction.cashflowMode==='sale-transfer'?'Transfer only':'Payout received') + '</b></div>';
   show('<h2>' + E(transaction.title) + '</h2><p class="ledger-help">' + E([transaction.date,transaction.merchant,transaction.type].filter(Boolean).join(" · ")) + '</p>' +
     '<div class="detail-total">' + money(transaction.amount) + '</div>' + (window.PokeArtwork?.thumb(transaction) || '') + (window.PokeArtwork?.badge(transaction.type) || '') + rows +
     (transaction.notes ? '<p class="detail-notes">' + E(transaction.notes) + '</p>' : "") +
     (transaction.receipt && /^https?:\/\//i.test(transaction.receipt) ? '<a class="text-button" href="' + E(transaction.receipt) + '" target="_blank" rel="noopener noreferrer">Open receipt ↗</a>' : "") +
-    '<div class="modalFoot">' + (transaction.kind === "purchase" ? '<button class="btn" onclick="' + call("openReceipt",id) + '">Edit purchase</button>' : transaction.kind === "sale" ? '<button class="btn" onclick="' + call("editCost",id) + '">Edit cost</button>' : "") +
+    '<div class="modalFoot">' + (transaction.kind === "purchase" ? '<button class="btn" onclick="' + call("openReceipt",id) + '">Edit purchase</button>' : transaction.kind === "sale" ? '<button class="btn" onclick="' + call("editCost",id) + '">Edit cost</button>' : transaction.kind === "cashout" ? '<button class="btn" onclick="' + call("openCashout",id) + '">Edit cashout</button>' : "") +
     '<button class="btn danger" onclick="' + call("remove",id) + '">Remove</button><button class="btn primary" onclick="closeModal()">Done</button></div>');
 }
 function remove(id) {
@@ -408,6 +469,6 @@ function remove(id) {
 window.LedgerUI = {
   render:renderPage,startPage,rememberPage,begin,exportPrevious,setScope,setMonth,selectProfile,
   openReceipt,submitReceipt,recipient,recalculate,openBudgets,submitBudgets,renameProfile,addProfile,
-  details,remove,editCost,saveCost,buildReceipt,cents,selectedPurchases,sumRows,write
+  speciesSprite,sprite,cashFlow,buildCashout,openCashout,submitCashout,details,remove,editCost,saveCost,buildReceipt,cents,selectedPurchases,sumRows,write
 };
 })();

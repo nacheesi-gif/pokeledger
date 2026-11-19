@@ -108,6 +108,19 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   assert.deepEqual(await evaluate('db.members'),['Me','Maz saved','Lalie']);
   assert.equal(await evaluate('db.transactions[0].allocations[1].owner'),'Maz saved');
   await evaluate('window.prompt=()=>"Maz";LedgerUI.renameProfile("Maz saved")');
+  await evaluate(`LedgerUI.openCashout();{const f=document.getElementById('ledger-cashout-form');f.elements.grossAmount.value='100';f.elements.amount.value='94';LedgerUI.submitCashout(f);}`);
+  assert.equal(await evaluate('LedgerUI.cashFlow().pnl'),-6);
+  await evaluate(`LedgerUI.openCashout(db.transactions.find(t=>t.kind==='cashout').id);{const f=document.getElementById('ledger-cashout-form');f.elements.amount.value='90';LedgerUI.submitCashout(f,db.transactions.find(t=>t.kind==='cashout').id);}`);
+  assert.equal(await evaluate('LedgerUI.cashFlow().pnl'),-10);
+  assert.equal(await evaluate('db.transactions.length'),2);
+  assert.equal(await evaluate('db.transactions[1].fees'),10);
+  await send('Page.reload');
+  await waitFor('typeof db!=="undefined" && db.transactions.length===2');
+  assert.equal(await evaluate('LedgerUI.cashFlow().pnl'),-10);
+  await evaluate(`LedgerUI.openCashout(db.transactions[1].id);{const f=document.getElementById('ledger-cashout-form');f.elements.cashflowMode.value='sale-transfer';LedgerUI.submitCashout(f,db.transactions[1].id);}`);
+  assert.equal(await evaluate('LedgerUI.cashFlow().pnl'),-100);
+  assert.equal(await evaluate('metrics().spent'),100);
+  await evaluate(`LedgerUI.openCashout(db.transactions[1].id);{const f=document.getElementById('ledger-cashout-form');f.elements.cashflowMode.value='payout';LedgerUI.submitCashout(f,db.transactions[1].id);}`);
   for(const width of [320,390,430]){
     await send('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:2,mobile:true});
     for(const section of ['dashboard','spending','sales','settings']){
@@ -121,6 +134,7 @@ test('mobile Chrome: standalone manifest, touch navigation, offline relaunch and
   server.closeAllConnections();
   await new Promise(resolve=>server.close(resolve));
   await send('Page.reload');
-  await waitFor('typeof db!=="undefined" && db.transactions.length===1');
+  await waitFor('typeof db!=="undefined" && db.transactions.length===2');
+  assert.equal(await evaluate('LedgerUI.cashFlow().pnl'),-10);
   assert.deepEqual(await evaluate('db.members'),['Me','Maz','Lalie']);
 });
