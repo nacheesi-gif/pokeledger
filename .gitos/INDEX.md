@@ -41,3 +41,4 @@
 - [WO-014](work-orders/WO-014.md) — Missing artwork fallback and exact collector-number search.
 
 - [WO-015](work-orders/WO-015.md) — Editable cashouts, overall cash P&L and matching Gen3 sprites.
+- [WO-016](work-orders/WO-016.md) — Editable profile labels and Gen 3 sprites.

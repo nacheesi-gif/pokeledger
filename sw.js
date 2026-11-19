@@ -1,4 +1,4 @@
-const CACHE='pokeledger-performance-v29';
+const CACHE='pokeledger-performance-v30';
 const SHELL=['./','./index.html','./ledger.js','./sprites-gen3.png','./artwork.js','./psa-logo.svg','./cgc-logo.svg','./card-placeholder.svg','./ledger.css','./collections.js','./hauls.js','./manifest.webmanifest','./icon.svg','./icon-180.png','./icon-192.png','./icon-512.png','./fonts/archivo-black.ttf'];
 const scope = self.registration.scope;
 const shellURLs = new Set(SHELL.map(path => new URL(path, scope).href));
