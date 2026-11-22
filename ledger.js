@@ -264,7 +264,7 @@ function submitCashout(form,id = '') {
 }
 function overview() {
   const rows = selectedPurchases(), total = sumRows(rows);
-  const recent = [...rows].sort((a,b) => b.date.localeCompare(a.date)).slice(0,5);
+  const recent = newestTransactions(rows).slice(0,5);
   const finances = metrics();
   return '<div class="ledger-heading"><h1>SPENDING.</h1>' + scopePicker() + '</div>' +
     '<section class="spending-hero"><div><span>Total spent · ' + E(periodLabel()) + '</span><strong>' + money(total) +
@@ -284,13 +284,13 @@ function history() {
       call("selectProfile", filter.key) + '">' + E(filter.label) + '</button>').join("") + '</div>' +
     '<section class="history-total"><span>' + E(labelFor(profile)) + ' · ' + E(periodLabel()) + '</span><b>' + money(sumRows(rows, profile)) + '</b></section>' +
     '<label class="ledger-search">Find a purchase<input class="field" type="search" placeholder="Item, shop, or purchase type" value="' + E(q) + '" onchange="q=this.value;render()"></label>' +
-    '<section class="ledger-panel">' + (rows.length ? [...rows].sort((a,b) => b.date.localeCompare(a.date)).map(row => transactionRow(row,profile)).join("") :
+    '<section class="ledger-panel">' + (rows.length ? newestTransactions(rows).map(row => transactionRow(row,profile)).join("") :
       empty("No purchases in this view.", "Log a purchase for this profile or choose another period.")) + '</section>';
 }
 function resale() {
   const finances = metrics();
-  const sales = db.transactions.filter(transaction => transaction.kind === "sale").sort((a,b) => b.date.localeCompare(a.date));
-  const cashouts = db.transactions.filter(transaction => transaction.kind === "cashout").sort((a,b) => b.date.localeCompare(a.date));
+  const sales = newestTransactions(db.transactions.filter(transaction => transaction.kind === "sale"));
+  const cashouts = newestTransactions(db.transactions.filter(transaction => transaction.kind === "cashout"));
   const stock = ownedCards();
   return '<div class="ledger-heading"><h1>RESALE.</h1></div>' +
     '<section class="resale-hero"><span>Realized profit · all time</span><strong>' + money(finances.realized) +

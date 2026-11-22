@@ -9,6 +9,8 @@
  const esc=t=>String(t??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
  const token=t=>String(t||"").replace(/[^a-zA-Z0-9._+-]/g,"");
  const number=t=>(String(t||"").match(/\d+/)||["0"])[0];
+ const normalizeCollector=t=>String(t||"").toUpperCase().replace(/\s+/g,"").replace(/([A-Z]+)0+(?=\d)/g,"$1").replace(/[^A-Z0-9/]/g,"");
+ const matchesCollector=(card,query)=>{const q=normalizeCollector(query),id=normalizeCollector(card.localId);return Boolean(q&&(id.includes(q)||normalizeCollector(sourceNum(card,x.set)).includes(q))) };
  const isTG=s=>/trainer gallery/i.test(s?.name||"")||/swsh(9|10|11|12)(\.5)?tg/.test(s?.id||"");
  const isGG=s=>/galarian gallery/i.test(s?.name||"")||/swsh12(\.5)?gg/.test(s?.id||"");
  const isPromo=s=>/promo/i.test(s?.name||"");
@@ -74,7 +76,7 @@
  function rarity(c){return x.details[c.id]?.rarity||c.rarity||(isTG(x.set)?"Trainer Gallery · rarity loading":isGG(x.set)?"Galarian Gallery · rarity loading":"Rarity loading")}
  function filteredCards(){
    let a=x.cards;
-   if(x.search.trim()){const q=x.search.toLowerCase().trim();a=a.filter(c=>(c.name+" "+c.localId+" "+rarity(c)).toLowerCase().includes(q))}
+   if(x.search.trim()){const q=x.search.toLowerCase().trim();a=a.filter(c=>(c.name+" "+rarity(c)).toLowerCase().includes(q)||matchesCollector(c,q))}
    if(x.rarity!=="all")a=a.filter(c=>{
      const r=rarity(c).toLowerCase();
      if(x.rarity==="sir")return r.includes("special illustration");
